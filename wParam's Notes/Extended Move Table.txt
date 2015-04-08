@@ -1,0 +1,55 @@
+move_t
+{
+	int index
+	int unknown1
+	int unknown2
+	void *onentryfunc (?) //Changing this affects the move itself, making it null cause you to freeze in the animation
+	void *somefunc
+	void *somefunc
+	void *somefunc
+	void *usually800761C8
+};
+
+
+Fox:
+Moves:
+
+Neutral B:
+803c7788 - Pistol Draw
+803c77a8 - Laser Firing
+803c77c8 - Pistol Put Away
+(Air)
+803c77e8 - Pistol Draw
+803c7808 - Laser Firing
+803c7828 - Pistol Put Away
+
+Index IDs:
+0000000a - Non-Sprint Turn Around
+0000000b - Sprinting Turn Around
+0000000c - Sprint to Still
+0000000d - Run Animation
+00000010 - Jump Mid-Air
+00000011 - Back Jump Mid-Air
+00000012 - Double Jump Mid-Air
+00000013 - Double Back Jump Mid-Air
+00000014 - Falling
+00000015 - ?
+00000016 - ?
+0000001A - Falling After Special
+0000001B - Falling After Special
+0000001C - Falling After Special
+0000001D - Rolling Fall
+0000001E - (Invalid)
+0000001F - Crouch
+00000020 - (Invalid)
+00000021 - Crouch
+00000022 - Crouch Get-up?
+00000023 - Shield Dodge
+00000024 - Shield Dodge
+00000025 - (Invalid)
+00000026 - Shielding Pose
+00000127 - Pistol Draw
+00000128 - Laser Firing
+00000129 - Pistol Put Away
+0000012A - Air Pistol Draw
+0000012B - Air Pistol Fire

@@ -1,0 +1,4304 @@
+**********************************************
+***    wParam's SSBM working scratchpad    ***
+***                                        *********************************
+***  Not guaranteed to contain anything useful, or even to make sense    ***
+***  at all.  Read or use this file at your own risk.  If you can do     ***
+***  something cool based on this information, great, go for it, just    ***
+***  give me a little credit.                                            ***
+***                                                                      ***
+***  Note: this file contains profanity.                                 ***
+****************************************************************************
+
+POKE 8022D61C 38000006
+BPX 8016E730 might be "StartMelee" (gets called by dbgmenu and other doodad)
+
+DEBUG ON
+PHOOK 0
+RHOOK 0
+AHOOK 2
+POKE 803BAC1C 67636E72
+POKE 803BAC20 64775061
+POKE 803BAC24 72616D20
+POKE 803BAC28 4D617374
+POKE 803BAC2C 65722053
+POKE 803BAC30 61766520
+POKE 803BAC34 20202020
+POKE 803BAC38 20202020
+POKE 803BAC5C 43757065
+
+
+
+POKE 803BAC3C 4861636B
+
+
+
+POKE 80480ED8 0E010100
+POKE 80480EFC 0E010100
+POKE 80480DE8 3800064C
+POKE 80179188 2C1B0004
+POKE 8016EA2C 38000007
+
+POKE 8016C59C 2C1B0004
+
+
+POKE 8016EBA0 2C1E0004
+
+POKE 8016E594 2C1C0003
+8016E594... 8016E2BC starts a melee too.
+at ^^ loops from 0 to 6.  Setting it lower excludes people.
+This could probably crank it up to 7 or 8
+
+0x803456a8 some sort of Print to debug menu?
+80225704 some sort of dbgmenu code
+
+802FFEA4
+
+flags: //NOT bitfield
+#define MENUTYPE_LABEL 		0
+#define MENUTYPE_CALLFUNC 	1
+#define MENUTYPE_ENUM 		2	
+#define MENUTYPE_INT 		3
+#define MENUTYPE_8BIT		5
+#define MENUTYPE_16BIT		6
+#define MENUTYPE_32BIT		7
+#define MENUTYPE_FLOAT		8
+#define MENUTYPE_END 		9
+
+debug menu struct:
+{
+	int flags //1 == CALL_FUNC, 0 == label
+	void *func;
+	char *text;
+	char **enumtexts;
+	void *data; //pointer to where data goes, methinks
+	int mindata; //?
+	int maxdata;
+	int delta; //one of these is probably the delta
+}
+for the function, r3=0 means menu changed, r3=4 means menu displayed
+
+in enum maxdata somehow specifies how many there are
+
+float field: data is null
+
+
+r4 <- 80480000
+8022D61C 38000006 == debug menu
+802FFF2C seems to copy debug menu stuff to real stuff
+80026F2C with 18 in r3 seems to start a melee battle
+
+the fff2c is moving stuff to 80480DE8
+804806D8 for normal stuff
+
+803fa2f0 stores p1 size
+
+8045ACC4 804806F8 
+
+803fa258 + 220 = 803FA334, 38 for p2, 3c p4...
+80480E54 is where the flags need to go
+
+0000 0000 0000 0000  0000 0000 x000 0000
+
+;803000E4 = 5080063E ;change the rlwimi
+;80300168 = 5080063E 
+
+;rename vibration menu
+POKE 803FA8C4 466C6167 
+POKE 803FA8C8 73203E00 
+
+;stores whole flags value, loads damage, stores
+;doubles damage, stores in hp.
+POKE 803000E0 9886006C
+POKE 803000E4 80050068
+POKE 803000E8 B0060072
+POKE 803000EC 1C000002 
+POKE 803000F0 B0060074
+
+;80300124 = 60000000 ;don't clear bit 64
+;803001A8 = 60000000 ;ditto
+
+;same as above
+POKE 80300164 98860090
+POKE 80300168 8005006C
+POKE 8030016C B0060096
+POKE 80300170 1C000002
+POKE 80300174 B0060098
+
+;set int field, max 255, delta 1 for each in vibrate menu
+POKE 803FAA64 00000003
+POKE 803FAA7C 437F0000
+POKE 803FAA80 3F800000
+POKE 803FAA84 00000003
+POKE 803FAA9C 437F0000
+POKE 803FAAA0 3F800000
+POKE 803FAAA4 00000003
+POKE 803FAABC 437F0000
+POKE 803FAAC0 3F800000
+POKE 803FAAC4 00000003
+POKE 803FAADC 437F0000
+POKE 803FAAE0 3F800000
+
+043FA8C4 466C6167
+043FA8C8 73203E00
+043000E0 9886006C
+043000E4 80050068
+043000E8 B0060072
+043000EC 1C000002
+043000F0 B0060074
+04300164 98860090
+04300168 8005006C
+0430016C B0060096
+04300170 1C000002
+04300174 B0060098
+043FAA64 00000003
+043FAA7C 437F0000
+043FAA80 3F800000
+043FAA84 00000003
+043FAA9C 437F0000
+043FAAA0 3F800000
+043FAAA4 00000003
+043FAABC 437F0000
+043FAAC0 3F800000
+043FAAC4 00000003
+043FAADC 437F0000
+043FAAE0 3F800000
+
+
+ok.  now, onto speed!
+80480564 holds the speed that gets read at the start of a match
+(it's a float, 1.0 = normal, 0.5 = slomo, 1.25 = lightning, 4 = insane)
+
+802FFF2C seems to copy debug menu stuff to real stuff
+803F9F54
+803fa258
+803fa260 holds level from debug menu
+803FA334
+speed goes 288 bytes before level?
+level got stored to 80480DF6
+***8016E730 might be "StartMelee" (gets called by dbgmenu and other doodad)
+ FINALLY found the common pathway for everything
+
+level is 14(r31), speed is 52(r31)?  YES
+So it would seem
+level gets set in the 2fffxx functrion
+somewhere in there we'd need to set speed too
+that will be a mich more complicated code
+
+803fa2b0 - bc store team
+team 1 stored to 80480E51
+team damage stored as 0x01, second byte of melee block
+
+8030004c-58 should be available for use
+need to store to 52(r30)
+load from 544(r31)
+level from 803fa260 -> 312(r31)
+use 803fa348, override global debug menu
+3fa640 is the start of the menu in the file
+544(r31) is where GDE starts storing data
+
+considering 806A0000 as point of write data
+80300068 is 801F0138
+we can use r0
+branch from 80300068 to 806A0000 = 
+4Bc60060
+8030006C
+
+80300290 is the func called to bring up gdemenu
+
+804D6DDC stores gold coins
+803FA350 seems unused 552 (r31), store to 1(r30)
+
+;disable existing gdemenu
+POKE 803FA5E0 00000000
+
+;first GDE menu entry speed
+POKE 803FA678 00000008
+POKE 803FA690 40A00000
+POKE 803FA694 3E000000
+
+;second is team damaga
+POKE 803FA698 00000002
+POKE 803FA6A4 804D5880
+POKE 803FA6A8 803FA350
+POKE 803FA6B0 40000000
+POKE 803FA6B4 00000000
+
+;third GDE menu rumble menu
+POKE 803FA6B8 00000001
+POKE 803FA6BC 803004E8
+POKE 803FA6C0 803FA8C4
+
+;end gde menu early
+POKE 803FA6D8 00000009
+
+;rumble menu loads GDEM
+POKE 803FA9AC 80300290
+;text of MODE>
+POKE 803FA9B0 803FC426
+
+;branch to custom code
+POKE 80300068 4839FF98
+
+;custom code:
+;lwz r0, 544(r31)
+;stw r0, 52(r30)
+;lwz r0, 552(r31)
+;stb r0, 1(r30)
+;lwz	r0,312(r31) [original contents of 0068]
+;branch back
+POKE 806A0000 801F0220
+POKE 806A0004 901E0034
+POKE 806A0008 801F0228
+POKE 806A000C 981E0001
+POKE 806A0010 801F0138
+POKE 806A0014 4BC60058
+
+
+replace rumble menu with:
+00000001 80300290 803FC426 00000000 00000000 00000000 00000000 00000000
+
+THe rumble menu entry is:
+00000001 803004E8 803FA8C4 00000000 00000000 00000000 00000000 00000000
+
+team damage menu:
+00000002 00000000 xxxxxxxx 804D5880 xxxxxxxx 00000000 40000000 00000000
+
+
+
+
+
+
+
+test code 1:
+043FA5E0 00000000 
+043FA678 00000008
+043FA690 40A00000
+043FA694 3E000000
+043FA698 00000001
+043FA69C 803004E8
+043FA6A0 803FA8C4
+043FA6D8 00000009
+043FA9AC 80300290
+043FA9B0 803FC426
+04300068 4839FF98
+046A0000 801F0220
+046A0004 901E0034
+046A0008 801F0138
+046A000C 4BC60060
+
+ok, bugs:
+need to default the speed to 1, or else it's bad juju
+
+Match flags:
+0x00000400 : Award ceremony? no
+0x02000000 : Time limit on match
+0x08000000 : 6 scores
+0x20000000 : Stock
+0x40000000 : coin
+0x60000000 : bonus
+0x10000000 : something stock, bonus, coin, time all have
+matchflags 2:
+0x00800000 : Match doesn't end when only 1 player left
+0x00400000 : same as ^^ (must mean some other goal)
+0x00200000 : can't damage each other
+0x00100000 : (bombs walk forever?)
+
+
+0x4000 
+
+****  ok.  So 801A4014 - 801A4278 seems to do lots of stuff
+for a fight, 801A43A0 - 801A450C calls it
+reward as well.
+
+801A3F48 - 801A4010
+
+801B0B8C - 801B0BEC ? 
+801A4CE0 - 801A4D30 ? 
+801A4BD4 - 801A4CDC ? 
+801A40D0 - 
+
+fight: 801A44C4
+801A45C4, 801A4510 - 
+the 801a3f48
+801A4510
+
+new tactic
+8017A22C accesses win screen data
+8017A078 - 8017A678 (?)
+801776D8
+80177368 - 80177700
+801A40E8
+5
+801B0B8C
+new tact
+804d64f8 score p1?
+80DB844B
+
+8045310E stores p1 lives
+
+80480FA6 stores p1 score?  i forget now.
+score moved to 80483228 by 801B0B8C
+8017AA78 accesses it
+
+for the crash on finish normally:
+we get to [ 8017AA78 8017AD00 ], returns
+to 8017764C, in [ 80177368 80177700 ], returns
+to 801A40E8, in [ crazy uber function ], crashes before the next entry into uber
+POKE 801A40F0 60000000
+crashed before 801A40F4, suspecting [ 801A4D34 801A509C ]
+got to 80376DFC
+got to 80376E20
+got to 801A4D78
+got to 801A4D7C
+got to 801A5084.  beq+	0x801a4d98, some sort of loop
+ it only loops once before the crash
+ok.  So, from 801A4D98:
+got to 801A4DB8
+got to 801A4DC4, branches to 1a4ddc
+jumped a bit and got to 801A4DE4
+again and got to 801A4E00
+got to 801A4E10, no branch
+got to 801A4E20
+got to 801A4E40
+got to 801A4E4C
+got to 801A4E5C, 60
+got to 801A4E70
+never got to --80
+got to 801A4E88
+got to 801A4E94
+jumped to 801A4EE8
+got to 801A4EFC
+got to 801a4f34
+got to 801A4F78
+got to 801A4F80, 88
+got to 801A4F94, a0
+got to 801A4FB0, c4
+got to 801A4FD4
+got to 801A4FE8
+got to 801A4FFC
+got to 801A5014
+got to 801A5020, 24, 2c, 30
+
+801A4DF0: compares r0 to 3, then branches if less than.  
+  maybe an if (type < TYPE_NONE)?
+
+
+8017AE0C does as well, at crash time.  hal leh fucking lou yah
+8017AE0C is called once per person at crash time.
+80175240 - 80175568 calls 8017AE0C, called 4 times.
+called once by 80175C5C - 80175D30
+called by 80178BB4 - 801791E0 (fuck that's big)
+THe crash seems to happen somewhere in crazy mammoth function.
+This function enters and exits at crash time.
+It is probably doing ALL of the bonus calculation stuff.
+Look in it for a loop of some sort, or look at the li r4, 6 instructions.
+
+code got to 80179090 , the first li r4, 6
+got to 801790B0
+got to 8017909C
+got to 801790BC
+got to 801790C4
+got to 801790D4
+got to 801790E4
+got to 80179140 (branched past 80179100)
+80179148
+80179154
+80179184
+80178E24, the start of a loop?
+POKE 80179188 2C1B0004
+
+crashed before 80179100
+
+4 players doesn't crash it
+5 players doesn't crash it unless all 4 original players are filled
+sometimes the crash doesn't happen.
+Could it somehow be graphics related?
+
+POKE 80000100 4C000064
+POKE 80000200 4C000064
+POKE 80000300 4C000064
+POKE 80000400 4C000064
+ OKE 80000500 4C000064
+ OKE 80000600 4C000064
+POKE 80000700 4C000064
+ OKE 80000800 4C000064
+ OKE 80000900 4C000064
+
+
+
+
+
+
+80489D58 seems to be an important array.  StartMelee is writing there
+
+804532FC holds the number of smashes that gets used for score screen
+80040A64 reads it for score
+80039660 reads it for awards
+ stores it to 804EEA64 (stack ptr + 84)
+ 80039F34 reads it from there, compares it to 0
+
+[ 80039450 80039614 ] /may/ be the calc bonuses function
+[ 8016C4F4 8016C5BC ] calls ^^
+
+8016C59C compares something to 6
+for (x=0;x<6;x++)
+ calc_melee_bonus();
+POKE 8016C59C 2C1B0004
+
+POKE 8016EBA0 2C1E0004
+^^ seems to have no effect
+
+[ 8016E9C8 8016EBBC ] is the master "fill reward screen w/ stuff" function
+POKE 8016E9C8 4E800020
+^^ replaces reward w/ "return;"
+
+POKE 8016EA2C 38000007
+^^^ all matches end in 'no contest'
+
+80167978 loads p5/p6
+8016797C
+
+POKE 80480DE8 3800064C
+
+POKE 80179188 2C1B0004
+POKE 8016EA2C 38000007
+
+POKE 80167978 3800000E
+POKE 80167980 38000001
+
+POKE 80167A84 38600006
+^^ adds 6 player scores
+
+
+ok, so we want to add another iteration to the copy loop
+
+8030009C 38000003  ;loop to 3
+
+;branch from 803001B4 to 806A0050 = 39FE9C
+803001B4 4839FE9C
+
+806A0050 7C0902A6 ;mfctr r0
+806A0054 2C000002 ;cmpwi r0,2
+806A0058 41820044 ;beq- skipper (return)
+806A005C 2C000003 ;cmpwi r0, 3
+806A0060 41820038 ;beq done (add + return)
+806A0064 8005002C ;lwz r0, 55(r5) - kind
+806A0068 98060061 ;stb 97(r6)
+806A006C 98060085 ;stb 133(r6)
+806A0070 80050018 ;lwz r0, 24(r5)
+806A0074 98060060 ;stb +96
+806A0078 8005FFFC ;lwz r0, -4(r5)
+806A007C 98060084 ;stb +132
+806A0080 88060069 ;load from 105(r6) 
+806A0084 700000FD ;and with fd
+806A0088 98060069 ;store
+806A008C 8806008D ;load from 141(r6)
+806A0090 700000FD ;same
+806A0094 9806008D ;same
+806A0098 38A50008 ; addi r5, r5, 8
+806A009C 4BC6011C ;806A0080 to 803001B8 = 39FEE4 = C6011C
+==>
+POKE 8030009C 38000003
+POKE 803001B4 4839FE9C
+POKE 806A0050 7C0902A6
+POKE 806A0054 2C000002
+POKE 806A0058 41820044
+POKE 806A005C 2C000003
+POKE 806A0060 41820038
+POKE 806A0064 8005002C
+POKE 806A0068 98060061
+POKE 806A006C 98060085
+POKE 806A0070 80050018
+POKE 806A0074 98060060
+POKE 806A0078 8005FFFC
+POKE 806A007C 98060084
+POKE 806A0080 88060069
+POKE 806A0084 700000FD
+POKE 806A0088 98060069
+POKE 806A008C 8806008D
+POKE 806A0090 700000FD
+POKE 806A0094 9806008D
+POKE 806A0098 38A50008
+POKE 806A009C 4BC6011C
+
+
+POKE 80179188 2C1B0004
+POKE 8016EA2C 38000007
+
+POKE 80167A84 38600006
+
+POKE 803FA56C 803FB538
+POKE 803FA578 42080000
+POKE 803FA564 00000000
+
+
+0430009C 38000003
+043001B4 4839FE9C
+046A0050 7C0902A6
+046A0054 2C000002
+046A0058 41820028
+046A005C 2C000003
+046A0060 4182001C
+046A0064 8005002C
+046A0068 98060061
+046A006C 98060085
+046A0070 80050018
+046A0074 98060060
+046A0078 98060084
+046A007C 38A50008
+046A0080 4BC60138
+04179188 2C1B0004
+0416EA2C 38000007
+04167A84 38600006
+
+
+all chara is at 803FA278
+publicity is at 803FA25C
+
+3FA560 starts publicity menu
+;make publicity a char picker
+;set enum, set max, set func
+POKE 803FA56C 803FB538
+POKE 803fa578 42080000
+POKE 803FA564 00000000
+ok, so 24(r5) = 803FA278
+r5 is 803FA260
+we want -4(r5)
+
+
+
+
+Version 2.5, now w/ different ppl for 5 & 6
+0430009C 38000003
+043001B4 4839FE9C
+046A0050 7C0902A6
+046A0054 2C000002
+046A0058 4182002C
+046A005C 2C000003
+046A0060 41820020
+046A0064 8005002C
+046A0068 98060061
+046A006C 98060085
+046A0070 80050018
+046A0074 98060060
+046A0078 8005FFFC
+046A007C 98060084
+046A0080 38A50008
+046A0084 4BC60134
+04179188 2C1B0004
+0416EA2C 38000007
+04167A84 38600006
+043FA56C 803FB538
+043FA578 42080000
+043FA564 00000000
+
+
+
+the loop:
+X	players	action
+4 3 0 3	1-2	increment r5
+3 2 0 2	3-4	nothing (let 5-6 get 3-4)
+2 1 0 1	5-6	do fixup (and increment)
+	
+3 2 1 3	1-2	nothing
+2 1 1 2	3-4	dofixup and increment
+1 0 1 1	5-6	nothing (incrememt)
+
+r31 holds 803FA128
+val is at 803fa154
+allchar is at  278
+allkind is at  28C
+
+mfctr r0
+lwz r3, xx(r31) ;load val
+
+and. r3, r3, r0
+bz skipper
+
+For the team stuffeth:
+r31 is 803FA128
+team 1 is 803FA39C = 628
+team 2 is 803FA3A0 = 632
+
+POKE 8030009C 38000003
+POKE 803001B4 4839FE9C
+
+POKE 806A0050 7C0902A6
+POKE 806A0054 807F002C
+POKE 806A0058 7C030214
+POKE 806A005C 2C000003
+POKE 806A0060 4182002C
+POKE 806A0064 2C000002
+POKE 806A0068 40820020
+POKE 806A006C 801F0164
+POKE 806A0070 98060061
+POKE 806A0074 98060085
+POKE 806A0078 801F0150
+POKE 806A007C 98060060
+POKE 806A0080 801F0134
+POKE 806A0084 98060084
+POKE 806A0088 38A50008
+POKE 806A008C 4BC6012C
+
+POKE 80179188 2C1B0004
+POKE 8016EA2C 38000007
+
+POKE 80167A84 38600006
+
+POKE 803FA56C 803FB538
+POKE 803FA578 42080000
+POKE 803FA564 00000000
+
+
+POKE 803FA5B0 803FA154
+
+
+
+
+
+
+
+8045310E stores p1 lives
+80453130 stores a pointer to the place where size comes from
+80d055e0 start of pointer (playerdynblock)
+80D05678 changes w/ size
+so *(80453130 + 152)
+800866B8 writes to size in [ 800866A4 800866D8 ]
+called from 800D2A98 in [ 800D2A3C 800D2AD4 ]
+ ^^ is returning 1, reutrns 0 on the last stage in the growth
+forcing it to return 1 always doesn't make him grow forever
+grows normally and gets frozen when he would normally stop
+rturns to 800D1CC4 in [ 800D1CAC 800D1CE4 ]
+800d1b04 called while func returns 0
+80d05640 *(playerdynblock + 44)
+8736(r30) stores flags
+04 = has mush
+02 = has mini
+
+80144F70
+[ 80144F58 80144FB0 ] called on b press
+
+[ 800C0134 800C01FC ] called on pretty much any input
+^^^ is dispatching to the char specific functions
+
+called from 800698DC, [ 800693AC  ]
+800693AC is called from /EVERYWHERE/
+800DEBD0 calls it when you taunt
+800DEAC0  calls it
+800DE9D8 calls x
+800DE9D8 is called all the damn time
+
+803c1e38 is some sort of dispatching table.
+((DWORD *)r3)[1] = index used by 800C0134 to load r12 for calling
+the index has some shifting done
+
+[ 800D15D0  ] is writing the 4 (giant) to the flags
+called from 800D15F0, [ 800D15D0  ]
+called from 800D1890, [ 800D1868  ] <- called many times during growth
+called from 8006AB78, via function pointer
+
+[ 800D1B04  ] is turning it off
+called from [ 800D1CAC  ]
+called from 8006AB78, via function pointer again
+
+POKE 800D15FC 60000000
+POKE 800D1F98 60000000
+
+the flags var stores metal and other things, too
+many values stored right close by there.
+Code difficut to work out.  Condifions for shrinking not clear.
+
+fill/slide:
+043FB760 447A0000
+043FB780 447A0000
+043FB7A0 447A0000
+043FB7C0 447A0000
+
+100 010 00 0000 0000 0000 0000 0000 0000
+00000000 843FB760
+447A0000 00040008
+
+
+*** Item switch
+
+use ****803FA15C****!!!! and 803FA160, 52 (r31) and 56(r31)
+storing to 32(r30) and 36(r30)
+r30 is 80480DE8
+
+;use the thing that clears the vibrate bit.
+;useless code replaced with useful code.  means stamina mode can now set
+vibrate setting
+80300124 = 60000000 ;don't clear bit 64
+803001A8 = 60000000 ;ditto
+
+POKE 80300078 809F0038
+POKE 8030007C 909E0024
+
+POKE 80300124 807F0034
+POKE 803001A8 907E0020
+*** these next 4 codes are wrong.  they edit the second word!
+POKE 803FD924 00000005
+POKE 803FD934 803FA160
+POKE 803FD944 00000005
+POKE 803FD954 803FA161
+
+1000 0100 0011 1111 1101 1001 0010 0100
+Change all eight result menu slots to hex byte entries
+00000000 843FD924
+00000005 00080008
+00000000 843FD934
+803FA15C 01080008
+
+
+10000000001111111101100100110100
+
+
+******************
+New team damage/speed code
+******************
+There are 8 instructions we can lose in the debug menu->melee_t function
+
+80300078:  90BE0024	stw	r5,36(r30)
+8030007C:  90BE0020	stw	r5,32(r30)
+
+80300120:  8806006C	lbz	r0,108(r6)
+80300124:  50603672	rlwimi	r0,r3,6,25,25
+80300128:  9806006C	stb	r0,108(r6)
+
+803001A4:  88060090	lbz	r0,144(r6)
+803001A8:  50603672	rlwimi	r0,r3,6,25,25
+803001AC:  98060090	stb	r0,144(r6)
+
+78 and 7c store -1 to items, we'll clobber that with the item code
+the next 2 groups clear bit 64 from flags, we don't need it
+r3 can be used bwtween the two groups
+r4 can be used within them
+so the team code replaces the load/store r0 with a load/store r4
+and the item switch code replaces the rlwimi in each with a load/store
+
+
+;first GDE menu entry speed
+POKE 803FA678 00000008
+POKE 803FA690 40A00000
+POKE 803FA694 3E000000
+
+;second is team damaga
+POKE 803FA698 00000002
+POKE 803FA6A4 804D5880
+POKE 803FA6A8 803FA350
+POKE 803FA6B0 40000000
+
+
+;end gde menu early
+POKE 803FA6B8 00000009
+
+;custom code:
+;lwz r4, 544(r31)
+;stw r4, 52(r30)
+;lwz r4, 552(r31)
+;stb r4, 1(r30)
+POKE 80300120 809F0220
+POKE 80300128 909E0034
+POKE 803001A4 809F0228
+POKE 803001AC 989E0001
+
+;no func calls off of GDEmenu
+POKE 803FA67C 00000000
+POKE 803FA69C 00000000
+POKE 803FA6BC 00000000
+POKE 803FA6DC 00000000
+POKE 803FA6FC 00000000
+POKE 803FA71C 00000000
+
+
+043FA678 00000008
+043FA690 40A00000
+043FA694 3E000000
+043FA698 00000002
+043FA6A4 804D5880
+043FA6A8 803FA350
+043FA6B0 40000000
+043FA6B8 00000009
+04300120 809F0220
+04300128 909E0034
+043001A4 809F0228
+043001AC 989E0001
+00000000 843FA67C
+00000000 00060008
+
+
+*****************************************
+Updated stamina debug
+*****************************************
+
+;stores whole flags value, loads damage, stores
+;doubles damage, stores in hp.
+POKE 803000E0 9886006C
+POKE 803000E4 80050068
+POKE 803000E8 B0060072
+POKE 803000EC 1C000002 
+POKE 803000F0 B0060074
+
+;same as above
+POKE 80300164 98860090
+POKE 80300168 8005006C
+POKE 8030016C B0060096
+POKE 80300170 1C000002
+POKE 80300174 B0060098
+
+;set int field, max 255, delta 1 for each in vibrate menu
+POKE 803FAA64 00000003
+POKE 803FAA7C 437F0000
+POKE 803FAA80 3F800000
+POKE 803FAA84 00000003
+POKE 803FAA9C 437F0000
+POKE 803FAAA0 3F800000
+POKE 803FAAA4 00000003
+POKE 803FAABC 437F0000
+POKE 803FAAC0 3F800000
+POKE 803FAAC4 00000003
+POKE 803FAADC 437F0000
+POKE 803FAAE0 3F800000
+
+043000E0 9886006C
+043000E4 80050068
+043000E8 B0060072
+043000EC 1C000002
+043000F0 B0060074
+04300164 98860090
+04300168 8005006C
+0430016C B0060096
+04300170 1C000002
+04300174 B0060098
+00000000 843FAA64
+00000003 00040008
+00000000 843FAA7C
+437F0000 00040008
+00000000 843FAA80
+3F800000 00040008
+
+
+more num players stuf:
+POKE 8016DE88 2C1F0003
+
+Item switch goes to 8
+POKE 803FA9C8 00000003
+POKE 803FA9E0 41000000
+POKE 803FA9E4 3F800000
+
+
+Under debug->melee_t
+4 extsb instructions that are useless, we can make them useful
+move the highest bytes of items into match flags
+gives us access to item-only melee and bombs falling melee
+Only useful with item switch code on, has no effect otherwise.
+POKE 803000B4 38E000FD
+POKE 80300118 38E000FD
+POKE 80300138 38E000FD
+POKE 8030019C 38E00004
+
+lbz r7, 56(r31)
+stb r7, 5(r30)
+lbz r7, 57(r31)
+stb r7, 6(r30)
+POKE 803000B4 88FF0034
+POKE 80300118 98FE0005
+POKE 80300138 88FF0035
+POKE 8030019C 98FE0006
+
+
+******************************************************
+ Infinite jumps porting
+******************************************************
+mewtwo:
+
+^^ this is the addy, same function, doesn't work right.
+from 1.1:
+ness 	040CBB8C 60000000
+kirby	040CB8D4 60000000 *
+peach	040CBF3C 60000000 *
+yoshi	040CBCC4 60000000
+mewtwo	040CC08C 60000000 *
+all	040CBA24 60000000 *
+
+candidates:
+peach	800CC1B0 60000000
+mewtwo	800CC300 60000000
+kirby	800CBB48 60000000
+all	800CBC98 60000000
+yoshi	800CBF38 60000000
+ness	800CBE00 60000000
+
+peach	
+040CC1B0 60000000
+mewtwo	
+040CC300 60000000
+kirby	
+040CBB48 60000000
+all	
+040CBC98 60000000
+yoshi	
+040CBF38 60000000
+ness	
+040CBE00 60000000
+
+802CC1CC jump function for mewtwo
+802CBD24
+802CBB38 loads that value and stores it somewhere.  [ 802CBAA8  ]
+802CB9E0
+
+
+*****************************************************
+how to make new debug menu
+*****************************************************
+to bring up vibrate menu, thsi func is called:
+803004E8:  7C0802A6	mflr	r0
+803004EC:  3C808040	lis	r4,-32704
+803004F0:  90010004	stw	r0,4(r1)
+803004F4:  3CA08030	lis	r5,-32720
+803004F8:  3884AA44	subi	r4,r4,21948
+803004FC:  9421FFF8	stwu	r1,-8(r1)
+80300500:  38A5FE6C	subi	r5,r5,404
+80300504:  4BFFF891	bl	0x802ffd94
+80300508:  38600000	li	r3,0
+8030050C:  8001000C	lwz	r0,12(r1)
+80300510:  38210008	addi	r1,r1,8
+
+802ffd94 is called with what's in r3, 0x803FAA44, 0x802FFE6C
+faa44 is the start of the menu data
+2ffe6c is some srandom fun
+80300514:  7C0803A6	mtlr	r0
+80300518:  4E800020	blr	
+
+
+
+80300968 is called by "select char"
+it doesn't actually do anything.,
+
+8022D594 is the func that is called when choose your char is put up?
+Both select char and start match have funcs that look like this:
+8030097C:  38600001	li	r3,1
+80300980:  4BD236B1	bl	0x80024030
+80300984:  38600008	li	r3,8
+80300988:  4BEA3971	bl	0x801a42f8
+8030098C:  4BEA41D5	bl	0x801a4b60
+
+80024030 is called all over the place.  it might be "play standard sound" or something.
+the second bl can vary, but the third is the same.
+Both of the latter two functions are very short, and just poke their param to some
+global place.  I suspect, but cannot prove, that 801a4b60 sets something that makes the
+main loop do something on the next iteration. << strongly supported by evidence
+
+12(80479D58) = 1 is what 801a4b60 does.  (80479D64)
+reads from this addy:
+801A500C
+801A5024
+801A507C
+
+802ffea4 is the "start melee" at the bottom of the debug menu
+
+80479D30 is where the 2nd functions write to
+0000yy00 - yy is the previous type (most significant byte)
+060601xx - debug menu (xx = which root menu)
+00000600 - first screen
+00001800 -    "    "
+18180001 - Demo battle
+01010000 - normal menu system
+02020100 - choose your character (custom rules + start)
+03030170 - classic mode
+0202  01 - stage select
+
+debug menu, 801A4014 handles? 
+801A4014 : potential "change state" handler.
+Minor state handler is called with a pointer to the major state block.
+It seems to read from the master gui register, byte 3, so 80479D33, to get the 
+proper minor state.  
+
+[ 801A43A0 801A450C ] called whenever the 'major' state changes.  It calls 801A4014 , 
+the minor state change handler.
+
+Major state change handler calls 801A50AC, which returns 803DACA4 , which seems to be the list of major states.
+Major state change looks at byte index 1 in the struct and matches it against the major state passed into the function.  I bet if we call this function we'll effect a state change.  (major state change is called only once, from 801A45C4, in 801A4510)
+
+state 2 (melee) looke like this:
+00020000
+801A55EC (just calls 8000c160) (constructor)
+801A5614 (empty) (destructor)
+801A5598 (not called [?])
+803DD9A0 (must be minor states)
+
+state 6 (debug menu) has no functions listed.  (all null)
+the minor states is 803DD6D0:
+00020000 801B09C0 00000000 07000000 804D6890 00000000
+801B09C0 does nothing but set stuff pointed to by the minor block (804D6890)
+to 803FA4E0 , 801B09F8
+minor[1] is called to revert to the "0" state.  it does just like the select char
+garbage.
+
+801a42f8: 80479D30
+
+801B0A14:  38600000	li	r3,0
+801B0A18:  4BFF38E1	bl	0x801a42f8
+801B0A1C:  4BFF4145	bl	0x801a4b60
+801B0A20:  38600000	li	r3,0
+
+801a42f8: Write r3 to new major function (and go?)
+801a42e8: Write r3 to new major function
+801a42a0: Write r3 to new minor function
+801a4b60: Write 1 to "go"
+801a42d4: Write 1 to "heart" + 12
+
+80300968 803001dc 803002fc
+Debug minor codes:
+0	root menu
+1	Versus mode
+2	test mode
+3	jigglypuff!
+4	start match
+5	result (direct jump not tested)
+6	classic mode match intro screen (c. falcom vs c falcon)
+7	captain falcon with "now loading"
+8	"coming soon" screen
+9	"you lost" classic mode screen
+A	new foe appeared
+B	results test
+C	soft reboot
+D	"memcard A is corrupt.  erase?"
+E	credits
+F	crash teh game
+10	crash game
+
+Looking at single button, after stage select.
+the blrl that runs is at 801A40B0 , it branches to 801BA1C8
+
+803002FC is the mode team test function
+#branch from 801BA1C8 to 803002FC = 146134
+POKE 801BA1C8 48146134
+POKE 8030030C 60000000
+
+#branch from 801BA1C8 to 80300968 = 1467A0
+POKE 801BA1C8 481467A0
+
+80479D30
+
+80300968 - debug menu major state change
+
+POKE 80300978 60000000
+POKE 8030097C 38600006
+# branch LINK from 80300980 to 801A43A0 = EA3A20
+POKE 80300980 4BEA3A21
+POKE 80300984 60000000
+POKE 80300988 60000000
+POKE 8030098C 60000000
+
+002C0000
+801BA2EC
+00000000
+801BA2C4
+803DF2B8
+
+single button, after the person select, minor change func:
+blrl at 801A40B0 to 801BA160
+
+804D68BC is where menu writes major state before calling "change"
+801B139C reads it, in 801B138C <- main menu system's "new major state"
+Puts new major state in r3 and calls 801a42e8
+
+maybe try:
+801B13A0:  4BFF2F49	bl	0x801a42e8
+801B13A4:  4BFF2F31	bl	0x801a42d4
+for the "revert to debug" func?
+
+POKE 80479D30 06020101
+POKE 80479D3C 01000000
+POKE 80479D64 00000001
+
+POKE 80479D30 02020600
+POKE 80479D3C 01000000
+POKE 80479D64 00000001
+
+POKE 80479D30 02060101
+POKE 80479D3C 01000000
+POKE 80479D64 00000001
+
+POKE 80479D30 2C060102
+POKE 80479D3C 01000000
+POKE 80479D64 00000001
+
+heart:
+0:	current major state
+1:	pending major state
+2:	previous major state
+3:	current minor state
+4:	previous minor state
+12:	set to 1 to mean "State change"
+xx:	effect a change
+
+ssingle button stores characters at:
+8043208F #is the working area for 
+804320E3
+80480820
+810ED650
+
+8043208B
+804320DF
+8045B2A7
+8046DB77
+8048053F
+80480687
+804D49EB
+
+80480687, map
+
+
+
+----------------------------------
+Attempting to discover the nature of the d-pad develop hotkeys
+
+ITEM-> is at 803EAC88
+FFFFFFFFFFFF5378
+
+dblevel is at 804D4A08
+
+joker values:
+8046B114
+	these are only read from and stored from two places: (seems)
+	load: [ 8037750C 803779BC ] moves values to 804C1FF0
+	store: [ 803769FC 80376D00 ]
+
+[ 801A4D34  ] seems to do stuff.  it is called on major and minor state changes
+and it runs for their duration, it seems.  It calls the read function, and right 
+after that, it compares to develop flag.  If develop is on, 801a4970 is called.
+This seems to control the start button stuff
+
+801a4970 does quite a bit.  One thing is it loads is heart + something, which it then calls.  (time time time running something ADDY addy)
+8016BAF4 and 8016BBB4 are fighting buttons
+	
+804C1FF0
+	values stored here are not analog
+
+80479C60
+804A7F80
+
+heart: 80479D30
+
+8049FAB0 , item type
+Ok.  pokemon type is stored at 8049FAB7
+
+8022631C is the exact read value part
+802262E0 reads this value somewhere, but 802262E0 is called 4 times per frame.
+8026C704 is create item? -- only called by develop down thing
+calls 8026d324 with item code in r3
+
+
+[ 802261BC 802262DC ] reads pkmn type
+
+[ 8016AE80 ] is "GetItemFrequency()"
+
+802255a4 returns the buttons a player is pushing (but only the first frame they're pressed)
+8022558c returns buttons pressed
+8022655C in 802264C4 calls 802262E0
+802264C4 called by 80225958 in stupid crazy function.
+
+80225754 = stupid crazy function
+
+Stupid crazy function seems to be "HandleDeveloperKeys()"  Right at the top, it
+has "if (!develop mode) return;"
+
+Ok.  we're branching from 80225770, cmpwi r0, 3
+branch to some address with:
+
+
+cmpwi r0, 0
+beq go_back
+
+retry_stuff:
+li	r4,0
+mr	r3,r4
+bl	0x802264c4
+addi	r4,r4,1
+cmpwi	r4,4
+blt+	retry
+
+go_back:
+cmpwi r0
+
+80225754 is the func that writes to stored values in debug mode.  Interestingly, it's stupid crazy function.
+804C1FAC holds button values?  same as 8049FA00 ? 
+not quite.
+804C1FAC seems to be 68 bytes/record, 8049FA00 is 20
+
+8022558C:  1C830014	mulli	r4,r3,20
+80225590:  3C60804A	lis	r3,-32694
+80225594:  3803FA00	subi	r0,r3,1536
+80225598:  7C602214	add	r3,r0,r4
+8022559C:  80630000	lwz	r3,0(r3)
+802255A0:  4E800020	blr	
+
+8022558C
+mulli	r4,r3,68
+lis	r3,0x804C
+ori	r0,r3,0x1FAC
+add	r3,r0,r4
+lwz	r3,0(r3)
+blr	
+
+802255A4
+mulli	r0,r3,68
+lis	r3,0x804C
+subi	r3,r3,0x1FAC
+add	r3,r3,r0
+lwz	r3,8(r3)
+blr	
+
+
+
+in load chain, r30 is 80480DE8, start of melee block (?)
+e4f - p0 subcolor = 24 bytes
+e73 - p1 subcolor
+e97
+ebb
+80480edf = 247
+80480f03 = 283
+
+80480ED9 = 241
+80480EFD = 277
+
+
+
+
+
+Put on metal 
+
+
+Entry point of gc.dol is
+8000522C
+heart: 80479D30
+80479D30 : [current major] [pending major] [previous major] [minor state]
+To change states, write new state to pending major and set 80479D64 to 1.
+ahook 2 address is 8034DDA8
+branch from 8034DDA8 to 8000522C = CB7484
+POKE 8034DDA8 4BCB7484
+
+
+-------------
+AR version of d-pad item drop
+#run directly to drop and that's it
+#branch from 80225774 to 8022594C = 1D8
+POKE 80225774 480001D8
+#branch from 80225964 to 802259e4 = 80
+POKE 80225964 48000080
+
+#from 8022558C
+#update the functions to read properly
+#80225590:  3C60804A	lis	r3,-32694
+#80225594:  3803FA00	subi	r0,r3,1536
+POKE 80225590 3C60804C
+POKE 80225594 60601FAC
+
+#from 802255A4
+#802255A8:  3C60804A	lis	r3,-32694
+#802255AC:  3863FA00	subi	r3,r3,1536
+POKE 802255A8 3C60804C
+POKE 802255AC 60631FAC
+
+
+POKE 8049FAB0 00000006
+
+
+----------------------------------------
+Research into save/load.
+
+Random value near "unlocked chars" bitfield:
+8045BFC4 read by 803238D8 , then 80003230
+
+Holy shit!  80003220 is memcopy! (actually the latter part of memmove
+80003220 ( dest, src, len )
+memmove is 800031F4
+80003130 looks like memset ( addy, byte value, len )
+80003100 just calls memset and preserves the address in r3
+
+[ 803238C8 80323908 ] looks like memcmp
+80323908 ( one, two, length )
+
+the memcmp that reads is from 803A9A94, in [ 803A949C ]
+803A949C is massive.  called several times by 80357D2C during saves.
+... it's through a function pointer.  in [ 80357C10 ]
+80357C10 also called many times.
+on call, r6 contains 0xCC006800, which is the hardware addy of the EXI [memcard] bus
+it is NOT called on 'load'
+
+called by 803547E0 in [ 80354720 ] by 8035252C in [ 80352498 ] 
+bpx on 80352498 crashes gcnrd (not the game tho)
+
+new approach.  Save games are named "SuperSmashBros0110290334", 803bac5c
+
+80325A1C reads from this addy in [ 80325A0C ]
+80325A0C looks like strncmp
+strncmp called from 8001A568 in 8001A4CC
+8001A4CC is interesting.
+params:
+r3  : 803BAC5C  [save string]
+r4  : 00000000  
+r5 is immediately destroyed
+ok, not interesting, i lied. called by 8001BEA0 in 8001BE30
+
+8001BE30 :
+r3  : 00000000  
+r4  : 803BAC5C  "SuperSmashBros01..."
+r5  : 803BAB74  directs the thing on what to save.
+r6  : 80433334  [the strings that go in the file] appears to be all
+r7  : 80BE7CE0  points to the picture data
+r8  : 80BEACE0  i believe this is the icon
+r9  : 8043331C  points to just before strings in r6
+r10 : 8001CC30  if (r3==0)return; *(80433318+8) = 2;
+r11 : 00000000  
+
+the second parameter...... trying to save with "1" messes shit up
+
+r5: 0 3 0 0x1790 0 0x8045bf28
+0
+3
+0
+
+1790
+0
+8045bf28 [where they store current characters]
+
+1f2c
+1
+8045F5E4 [mostly empty]
+1f2c
+1
+8045F5E4 
+1f2c
+1
+8046343c
+1f2c
+1
+80467294
+1f2c
+1
+804691c0
+
+ffffffff
+00000000
+00000000
+[then some non-pointer non-text values]
+
+this func is called from 8001CD44 in 8001CC84
+8001CC84 is called all the time.
+
+POKE 803BAB8C 00000010
+POKE 803BAB90 00000000
+POKE 803BAB94 80002000
+
+
+interlude:
+POKE 8027A970 38A00001
+POKE 8027A748 4BD88838
+POKE 80002F80 38E00001
+POKE 80002F84 90E30E24
+POKE 80002F88 482777C4
+
+
+
+quick hack to put item select on debug menu:
+POKE 803FA5D0 8049FAB3
+POKE 803FA5C0 00000005
+
+
+Looking for load:
+DEBUG ON
+PHOOK 0
+RHOOK 0
+AHOOK 2
+BPR 803BAC5C
+
+80325A1C reads it, lr 8001A568
+lr points to [ 8001A4CC  ]
+[ 8001A4CC  ] takes only two params, char *filename, and int something (NULL both times)
+called twice on reset
+It must be "findFile" or something
+First call is LR 8001BD94 , second is 8001C340
+8001BD94 : [ 8001BD34 8001BE2C ], r4 and r5 are saved.
+r4: filename
+r5: save map (same as for save func.)
+8001BD34 does all the work.  Before the call, memcard area is initted to
+default state, after, the values are there as they belong.
+poke to 8045BF28
+at 8001BD90 nothing has changed
+at 8001BD94 nothing has changed
+at 8001BD98, r3 is 80433074 and nothing has changed
+at 8001BDAC, r3 is 804330C8 and nothing has changed
+at 8001BDC4 gcnrd fucking crashes, nothing changes i don't think
+i'm gonna go out on a limb and assume 80019cb0 loads from the card.
+if it doesn't return 11, the func just returns whatever it returns.
+at 8001BDDC it fucking crashes
+80019cb0 is sometimes called again, in a loop, until it gets the whole data...
+i THINK this resembles a "call to get size, then call to get data" type of setup.
+It seems prepared to accept up to 16 blocks.
+lr 8001CC04, [ 8001CBBC  ] passes all params to some other func which ignores them
+doesn't do much except call 8001BD34 with the params.
+80347364 writes to the machine state register (disabled interrupts, if i'm not mistaken)
+
+lr is in [ 801AF568  ]
+
+8001C340: [ 8001C2D8  ]
+^^ called with the string "Pikmin dataFile" so this is probably red herreng
+
+
+POKE 803FC4F0 817F8000
+
+POKE 803FC4F0 8000522C
+POKE 8022D61C 38000006
+
+DEBUG ON
+PHOOK 0
+RHOOK 0
+AHOOK 2
+
+POKE 803FC4F0 80001B50
+
+POKE 80001B50 7C6300A6
+POKE 80001B54 5464045E
+POKE 80001B58 7C840124
+POKE 80001B5C 3C608000
+POKE 80001B60 6063522C
+POKE 80001B64 7C6803A6
+POKE 80001B68 38600000
+POKE 80001B6C 4E800021
+POKE 80001B70 48000000
+
+------------------------------------
+Research on move/character structure
+
+Mewtwo second jump func is [ 800CC238 ]
+called from 800CBA8C, in [ 800CB950 ] (called every frame in the air)
+called from 800CB8C8, in [ 800CB870 ] (same)
+	from 800CB400, in [ 800CB334 ] (same; arial only)
+	from 8006B80C, in [ 8006AD10 ], through function pointer
+8006AD10 called all the time
+
+the pointer comes from lwz	r12,8604(r31), 
+80D00D40 + 8604 or 80D02EDC
+the pointers in this area change all the damn time
+8006A148 writes to it in [ 800693AC ]
+800693AC = CharStateChange?  
+r3 is a pointer, 80D00CE0
+r3 seems to be the player, r4 is some sort of state
+803c2b30 and -50 hold the address of the jump function, which seems a generic first jump
+803c2b20:	00000010 00008069 01800000 800cb2f8
+803c2b30:	800cb334 800cb474 800cb4b0 800761c8
+80069BF8 reads the 0x10
+string "mewtwo": 803db514 804d5944 
+803c2800 starts this array.
+b20 - 800 = 320, / 0x20 = 19.  19!!!
+make 2c the same as 19
+POKE 803C2D80 00000010
+POKE 803C2D84 00008069
+POKE 803C2D88 01800000
+POKE 803C2D8C 800cb2f8
+POKE 803C2D90 800cb334
+POKE 803C2D94 800cb474
+POKE 803C2D98 800cb4b0
+POKE 803C2D9C 800761c8
+157 is mewtwo charged
+replace 2c with 157
+POKE 803C2D80 00000002
+POKE 803C2D84 00000000
+POKE 803C2D88 01000000
+POKE 803C2D8C 800bef00
+POKE 803C2D90 00000000
+POKE 803C2D94 00000000
+POKE 803C2D98 00000000
+POKE 803C2D9C 00000000
+fuuuuuuuck!  the r4 in that function is hardcoded in funcs that call it!
+shieza!
+ok, let's say I want to replace "punch" with something else
+8008AC44:  3880002C	li	r4,44
+POKE 8008AC44 3880002C
+^^^ this makes a button do jump instead
+taunt is 800DECDC
+800DECC8:  38800108	li	r4,264
+POKE 800DECC8 38800161
+mewtwo's up b seems to be 161
+after 161, 80145D20 sets it to 165, from [ 80145B94 ]
+80145B74, [ 80145990 ]
+80145314, [ 801452EC ] <- called from func pointer
+8006AB78, 
+801452EC is stored at 803d0c8C, before the strings with mewtwo in it.
+It's array entry has 0x133 as its value, the array starts at 0x127
+this is index 12 in mewtwo's table.
+his table starts at 3d0b00
+at 803c12e0, there's a table of these values
+mewtwo's is at 3c1320, offset 16 hex.
+80068B80 reads this value
+... do the chars have different values in game from the ones they get in char select?
+
+00 02 falcon
+01 03 donkey
+02 01 fox
+03 18 game&watch
+04 04 kirby
+05 05 koopa
+06 06 link
+07 11 luigi
+08 00 mario
+09 12 marth
+0A 10 mewtwo
+0B 08 ness
+0C 09 peach
+0D 0C pikachu
+0E 0A/0B ice climbers
+0F 0F jigglypuff
+10 0D samus
+11 0E yoshi
+12 13 zelda
+13 07 shiek
+14 16 falco
+15 14 clink
+16 15 drmario
+17 1A roy
+18 17 pichu
+19 19 gannon
+1A 1B masterh
+1B 1D boy
+1C 1E girl
+1D 1F giga bowser
+1E 1C crazy hand
+1F 20 sandbag
+20 0A popo (ice climbers)
+looks like 21 and 25 are also valid...
+
+sandbag is 20, change 20 to mewtwo's
+POKE 803C1360 803D0B00
+POKE 803C1324 803D0B00
+
+[ 800693AC ] = CharStateChange?  			*****************************
+peach: 803CCCB8
+160 is down+b: index 11?
+803CCE18 is this move, index 11 in her table... wtf????
+guess i just screwed it up.
+0x155 seems to be the start of the "custom" offsets
+
+2c to peach's 160
+POKE 803C2D80 0000002E
+POKE 803C2D84 002C0201
+POKE 803C2D88 02800000
+POKE 803C2D8C 8011D2EC
+POKE 803C2D90 00000000
+POKE 803C2D94 8011D394
+POKE 803C2D98 8011D3D4
+POKE 803C2D9C 800761C8
+pulls no item....
+
+change taunt:
+POKE 800DECC8 3880013B
+
+it CRASHED THE GAME with 13A!  !!! SWEET!  that means there are empty slots!
+
+POKE 803C4F40 0000000F
+POKE 803C4F44 00000000
+POKE 803C4F48 01C00000
+POKE 803C4F4C 800cb528
+POKE 803C4F50 800cb5fc
+POKE 803C4F54 800cb6ac
+POKE 803C4F58 800cb6cc
+POKE 803C4F5C 800761c8
+
+POKE 803C4F60 0000012D
+POKE 803C4F64 00340014
+POKE 803C4F68 15000000
+POKE 803C4F6C 8011D2EC
+POKE 803C4F70 00000000
+POKE 803C4F74 8011D394
+POKE 803C4F78 8011D3D4
+POKE 803C4F7C 800761c8
+
+[ 8008732C ] reads the current state, returns 1 if 0 <= state <= 10
+[ 800C53E4 ] reads, returns 1 if 0x133 <= state <= 0x139
+
+move_t
+{
+	int animation
+	int unknown1
+	int unknown2
+	void *onentryfunc (?) (notcalled?)
+	void *somefunc
+	void *somefunc
+	void *somefunc
+	void *usually800761C8
+};
+
+todo:
+see if mushrooms cause state change
+see if mewtwo's moves cause state change in others
+see if peach's item works w/ different animation
+see if peach's item can be put on someone else's down b
+
+mushrooms give 13a and 13b...
+mewtwo change state in another calls from 800C45C0
+800C45AC:  3880012C	li	r4,300
+POKE 800C45AC 3880013E
+POKE 800C45B4 38A00090
+^^^ mewtwo's down+b causes a taunt
+3C = forward smash
+40 = down smash?
+9C = screw attack, but no altitude
+57 = blowed up? no, but highly amusing
+50 = lip stick?
+e9 = dodge towards
+ea = dodge away
+ec = mid air dodge, if they're pressing a direction.
+13A = get big mush on the ground
+
+we think 800D1A28 is the "get small mushroom" func
+neither of the function pointers of 13b are called.
+that's cause small mush is 13E = 4FC0
+"start" func is called many times
+must be some sort of "preframe/postframe" thing.
+
+mini mush is 13E, 90, 00
+taunt:
+POKE 800DECC8 3880013E
+POKE 800DECD0 38A00090
+
+800C45AC
+setting r5 to 90 sometimes makes mushroom not crash.
+
+the function that's setting 13E is 800D2048, [ 800D1FFC ] 1 param
+by 800D1F44, [ 800D1E80 ]
+by , [ 8006A1BC ], called all the time.
+
+800D6848 loads a function pointer, 8011E3D0, from 803C16A0
+803C167C seems to be "B button functions."
+indexed like the per-player states (155+)
+nulling it disables peach's b button
+replace it w/ ice climbers, 8011F1F8
+this is ONLY the b button!
+80147320
+
+looks like the funcs in these tables get only the "active player block"
+(same r3 as changecharstate)
+length: 84 (21 entries, as one would expect.
+vv first table
+803C10D0	jigglypuff & kirby; jump?
+803C1154	called on start/stop match
+803C11D8
+803C125C	only jigglypuff has this one
+803C12E0
+803C1364	
+803C13E8	side+b
+803C146C	
+803C1574
+803C15F8	?
+803C167C	b button
+803C1700	down+b
+803C1784	?
+803C1800	empty, except peach, game&watch
+803C1884	I think this isn't one...
+
+803c0ec0 is another table, 8 bytes/entry this time.
+First is an address, second is some number.
+the addy holds pointers that point on the heap.
+
+The char states seem to have a lot to do with graphics, little with gameplay.
+
+
+800D1FFC 
+POKE 800C45AC 3880013E
+#branch LINK from 800C45BC to 800D1FFC = da40
+POKE 800C45BC 4800DA41
+
+holder, d8 by 800DA214 
+e2 before e2, e2 by 800DAA0C
+e3 seems to be the "held" state, by 800DBB24
+
+big mush by 800D1758, [ 800D170C ]
+
+make target tiny:
+800DBB20:  4BF8D88D	bl	0x800693ac
+#branch LINK from 800DBB20 to 800D1FFC = FF64DC
+POKE 800DBB20 4BFF64DD
+
+make source big: #r30 saves r3
+800DA210:  4BF8F19D	bl	0x800693ac
+#branch LINK from 800DA210 to 800D170C = FF74FC
+POKE 800DA210 4BFF74FD
+
+#branch from 800DA210 to 80001B20 = F27910
+POKE 800DA210 4BF27910
+#branch LINK from 80001B20 to 800693ac = 6788C
+POKE 80001B20 4806788D
+POKE 80001B24 7FC3F378
+#branch LINK from 80001B28 to 800D170C = CFBE4
+POKE 80001B28 480CFBE5
+#branch from 80001b2c to 800DA214 = D86E8
+POKE 80001B2C 480D86E8
+
+
+link's arrow is 8008E258 [ 8008DCE0 ]
+8008E254:  4BFDB159	bl	0x800693ac
+#branch LINK from 8008E254 to 800D1FFC = 43DA8
+POKE 8008E254 48043DA9
+
+#branch LINK from 8008E254 to 800D170C = 434B8
+POKE 8008E254 480434B9
+8008E258 is NOT link's arrow, it's _EVERYTHING_, all normal damage.
+
+#make generic damage do something strange
+POKE 8008E254 4BFDB159
+POKE 8008E244 38800108
+
+80CE5E60 and 80CE5E64 have mushroom scale down factor (0.5 and 0.5)
+80CE5E58 and 80CE5E5C have scale up.  (1.8 and 1.5)
+only the first ever seems to be used, not sure what's up w/ that.
+
+todo: give samus a cape, or mario samus' fire.
+fully charged samus plus capes, baby, o yewah.
+
+mewtwo autofire:
+POKE 800DECC8 38800155
+155, 159
+let's try mario's cape to ... anyone else.
+mario cape is 159, table at 803C7120, move at 803C71A0
+803c2800 start of table, 803c2F80 is move
+original:
+POKE 803C2F80 0000003E
+POKE 803C2F84 00240A09
+POKE 803C2F88 0A800000
+POKE 803C2F8C 8008C520
+POKE 803C2F90 8008C55C
+POKE 803C2F94 8008C7F0
+POKE 803C2F98 8008C810
+POKE 803C2F9C 800761C8
+mario b move
+POKE 803C2F80 00000129
+POKE 803C2F84 00341012
+POKE 803C2F88 13000000
+POKE 803C2F8C 800E1550
+POKE 803C2F90 800E15C8
+POKE 803C2F94 800E15D0
+POKE 803C2F98 800E1840
+POKE 803C2F9C 800761C8
+Interesting.  the only thing that seems to matter is the first thing.
+It must be an index to something else, maybe all of those tables that we 
+thought meant down+b, or whatever.
+
+
+[ 8008DCE0 ] - generic takedamage
+
+
+pokemon address readers:  (8049FAB4)
+80225D24 reads, it's a little func
+lr 8027AC78, [ 8027AB64 ] seems to be "spawn pkmn", takes a pointer to a big
+heap block
+called by 80297E08, [ 80297DD8 ] this func is called every frame while a pokeball is opening.  I bet it's an item handler function.  r3 is probably created & maintained by an item manager.
+awesome.  it is, it's called from a function pointer.
+But, it doesn't appear in an in memory table.
+So, pokemon seem to be spawned by a complicated heap block that i won't want to create.
+fine.
+
+switch gears, let's try to make a move do a freezie.
+freezie does 5a, then 145, then he's in, then 146 to go out.
+the 145 from 80090BC4, [ 80090B60 ]
+DoFreezie seems to be 80090B60
+
+#branch LINK from 8008E254 to 80090B60 = 290C
+POKE 8008E254 4800290D
+
+just on mewtwo for now
+#branch LINK from 800C45BC to 80090B60 = FCC5A4
+POKE 800C45BC 4BFCC5A5
+
+
+
+looking for places that read from where the first value of move_t gets stored.
+800C53E4, returns 1 if 0x133<=thing<=0x139
+
+8006D220, in [ 8006D1EC 8006D9A8 ] reads the value.  this func has lots of function pointer calls in it.  It may be our target.
+
+80D0AB80
+
+
+tracing back from mewtwo's down+b hit function
+lr 800C4534, [ 800C44CC ]
+lr 8008EDB8, [ 8008EC90 ]
+lr 8006D3FC, [ 8006D1EC ], called all the time
+lr 80390E00, function pointer.
+
+ok, what sets us into that state for mewtwo.  move_t = 803D0D40
+starts from [ 801461F0 ]
+lr 800D690C, [ 800D68C0 ], function pointer.
+
+15f for side+b, [ 801466C4 ]
+
+The functions in move_t aren't totally useless.  FOr jump, one of them adds the initial velocity.  so why does changing only the first number make a difference??
+
+
+------------------------------------------------------
+slight break, adding a "big/small mushroom scale" thing
+
+
+link's arrow is 8008E258 [ 8008DCE0 ]
+8008E254:  4BFDB159	bl	0x800693ac
+#branch LINK from 8008E254 to 800D1FFC = 43DA8
+POKE 8008E254 48043DA9
+
+#branch LINK from 8008E254 to 800D170C = 434B8
+POKE 8008E254 480434B9
+8008E258 is NOT link's arrow, it's _EVERYTHING_, all normal damage.
+
+#make generic damage do something strange
+POKE 8008E254 4BFDB159
+POKE 8008E244 38800108
+
+80CE5E60 and 80CE5E64 have mushroom scale down factor (0.5 and 0.5)
+80CE5E58 and 80CE5E5C have scale up.  (1.8 and 1.5)
+only the first ever seems to be used, not sure what's up w/ that.
+
+800D170C is big mushroom, 800D1868 is big air
+make 800D177C a nop
+branch from 800D1788 and back to 800D178C
+
+air:
+nop 800D193C
+branch from 800D1948
+
+800D1FFC is small mushroom, 800D21BC is small air
+nop out 800D206C
+branch from 800D2078 and back to 800D207C
+
+air:
+nop 800D222C
+branch from 800D2238
+
+
+-----------------------------------------------------
+mid-match debug menu
+
+[ 801A43A0 801A450C ] is major state change function
+
+801A45F4:  38600000	li	r3,0
+
+li r3, 6
+bl 801A43A0
+
+POKE 80001C00 38600006
+#branch from 80001C04 to 801A43A0 = 1A279C
+POKE 80001C04 481A279C
+
+
+
+
+POKE 80001C00 7C0802A6
+POKE 80001C04 90010004
+POKE 80001C08 9421FF94
+POKE 80001C0C 3C808047
+POKE 80001C10 60849D30
+POKE 80001C14 38610008
+POKE 80001C18 38A00060
+POKE 80001C1C 60000000
+POKE 80001C20 38600006
+POKE 80001C24 48000028
+POKE 80001C28 3C608047
+POKE 80001C2C 60639D30
+POKE 80001C30 38810008
+POKE 80001C34 38A00060
+POKE 80001C38 60000000
+POKE 80001C3C 80010070
+POKE 80001C40 3821006C
+POKE 80001C44 7C0803A6
+POKE 80001C48 4E800020
+POKE 80001C4C 3C60803D
+POKE 80001C50 6063AD08
+POKE 80001C54 3C808047
+POKE 80001C58 60849D30
+POKE 80001C5C 38A00000
+POKE 80001C60 98A40003
+POKE 80001C64 60000000
+POKE 80001C68 4BFFFFC0
+
+#feom 1c64 to 801A4014 = 1A23B0
+POKE 80001C64 481A23B1
+
+#from 1c1c to 3220
+POKE 80001C1C 48001605
+#from 1c38 to 3220
+POKE 80001C38 480015E9
+
+#branch LINK from 800C45BC to 80001C00 = F3D644
+POKE 800C45BC 4BF3D645
+
+#branch LINK from 800C45BC to 800D1FFC = da40
+POKE 800C45BC 4800DA41
+
+heart: 80479D30
+
+look for a "display string" function
+80301E58 reads string to be displayed (strcpy)
+lr 80302ED8, [ 80302EA4 ] <- only called once, not every frame
+lr 80304038, [ 80303FD4 80304134 ], also only once
+lr 803041E0, [ 80304168 8030420C ], on startup of "root" menus.
+lr 801A635C, [ 801A632C 801A6378 ], func pointer
+lr 801A40E8, [ 801A4014 801A4278 ] <- doesn't return until menu exited.
+lr 801A44C4, [ 801A43A0 ] , "run major state"
+
+800C4724
+lr 8009447C
+lr 80094A14 function pointer
+80094A14 = warp star?--no, is "pick up item"
+
+160 is peach down+b
+#branch LINK from 8008E254 to 80094A14 = 67C0
+POKE 8008E254 480067C1
+no, crashes.  well no shit, you forgot to link it.
+still doesn't work quite right
+
+
+taunt makes you grow, getting hit makes you shrink?
+
+---------------------
+small mush again.
+d1ffc, lr points to 800D1E80
+lr is 8006A31C, [ 8006A1BC ]
+
+
+80094A14, pick up item.
+lr 8006AB78, func pointer, [ 8006A360 ]
+
+peach pull turnip:8011D0A4 in 8011D018
+called by function pointer in 8006CA5C, called constantly
+
+8011D1A4 sets 8011D018 where 8006CA5C reads it from
+lr 8011D1A0, [ 8011D11C ], function pointer call
+lr 800D690C
+
+--------------------------------------------
+porting pal codes
+8007f8e8 - RemoveBunnyHood?
+8009447C - getimmediateitem
+8007FA58 = getbunnyhood (player, item[?])
+8026b54c = GetDefaultDuration() (returns in f1)
+8006ACAC = 8006A5C8
+POKE 8006A5C8 60000000 = infinite bunny hood
+0406A5C8 60000000
+8007FB74 writes initial bunny hood value, llads from 60(r1) [ 8007FA58 ]
+8007FAB0 writes subsequent value?
+8007FAAC:  8001003C	lwz	r0,60(r1)
+8007FB70:  8001003C	lwz	r0,60(r1)
+POKE 8007FAAC 3800xxxx
+POKE 8007FB70 3800xxxx
+
+
+8006AE28 = 8006A744
+800c8a64 = RemoveCloaking?
+POKE 8006A744 60000000 = infinite cloak
+800C88D4 = applycloaking (player, int length, int something)?
+called from 8009465C, getimmediateitem
+80094654:  808407CC	lwz	r4,1996(r4)
+POKE 80094654 3880xxxx
+
+0406A744 60000000
+
+
+
+item duration
+80269D08 = 80269638
+items never disappear
+POKE 80269638 60000000
+04269638 60000000
+offset 3396 of item struct seems to be float timetillexpire;
+
+
+metal box
+8006ACF0 = 8006A60C
+POKE 8006A60C 60000000 = infinite metal box
+800c8540 = removemetalbox?
+2bc default duration
+write by 800C835C, [ 800C8348 ], EnableMetalBox (player, duration, int something)
+800871A8 also good metalbox candidate.
+the something looks an awful lot like player flags
+lr 80087224, [ 800871A8 ] 
+lr 8009463C, [ 8009447C ].  getimmediate
+looking at 80087224:
+80087214 sets r5 --- nevermind about r5
+POKE 80087214 38BF0000
+8008721C sets r4
+metal duration:
+POKE 8008721C 3880xxxx
+
+
+starman
+8006ABDC = 8006A4F8
+POKE 8006A4F8 60000000 = infinite starman
+80D02F64 is value.
+8007B834 writes to it initially, [ 8007B7FC ]
+8007B7FC = ApplyStarman (player, duration)
+lr 80077D28, [ 80077C60 ], takes lots of parameters.  (i think this is a generic
+"get touchableitem" function
+80077D1C sets r4
+POKE 80077D1C 3880xxxx
+
+
+----------------------------------------------------
+more move investigations
+mewtwo side+b: 15F, 131
+mewtwo down+b: 167, 138
+mario side+b: 159, 129
+link side+b: 15E
+
+the elusive index
+80085cd8 gets it in r5
+it's read and compared to -1, it's read and indexed into some string tables
+
+fun with 80085CD8
+POKE 80085CE8 3BE00002
+
+POKE 803C2D80 0000002E
+POKE 803C2D84 00340114
+POKE 803C2D88 15000000
+POKE 803C2D8C 801462DC
+POKE 803C2D90 80146394
+POKE 803C2D94 8014639C
+POKE 803C2D98 80146544
+POKE 803C2D9C 800761C8
+
+
+POKE 800E1484 60000000
+
+
+If we assign a button link table entry to something direct like "give starman" can we make sandbag's b moves be things like "get cloaking", "get metal", "get star"?
+
+(compare params of these functions.)
+
+Can we call out to the down+b table to force a character to do a certain move?  (again, compare params)
+
+mario side+b:
+800E1450
+
+POKE 800E148C 60000000
+POKE 800E1454 38800159
+POKE 800E1484 60000000
+
+803C71A4 00341012
+803C71A8 13000000
+803C71AC 800E1550
+  This one seems similar to the last one
+  However, removing it seems to hinder transition to the proper next state.
+  8006f238 seems to be returning 1 if the animation is still running.
+803C71B0 800E15C8 = "return;"	
+803C71B4 800E15D0
+  replacing this with "return" seems to not affect it except for the move now doesn't stop me from moving horizontally
+803C71B8 800E1840 short, seems insignificant
+803C71BC 800761C8
+
+POKE 800761C8 7C0802A6
+
+
+80069CA8 reads the index, this is the string table thing.
+8009e7b4 is called with some relevent vals in r4
+
+801461F0 is mewtwo down+b
+80D00F00 is r3
+800871A8 is metal
+
+theory: 8026b54c (item) is destroy item?  ... no.
+
+80D00CE0
+
+800D68C0 dispatches to down+b table
+lr 8008A51C, [ 8008A4D4 ] this func just has a lot of if (func()) return; constructs.
+8008A4D4 seems to be the b button key handler for HUMAN PLAYERS ONLY
+called by function pointer
+lr 8006B80C, [ 8006AD10 ] called for all 4 players.  called from function pointer...
+At the end it calls the above from function pointer, but only for human players.
+This func seems as good as any a candidate for "runframe (player)".
+lr 80390E00, [ 80390CFC ]. Called once per frame, takes no parameters.
+80390CFC has only the one blrl, and it calls it for more than players.  It seems to be calling the ->frame(self) type function for all items worth receiving such a notice. (Items like rain spams the hell out of it)  I think it's based on a linked list of things.  Not exactly sure where it gets the head pointer from.  The function is complicated
+I'm calling this function "RunObjectFrameFuncs ()"
+
+80D00DA0
+80DB84A0
+80EADCC0
+
+Back trace for getting big by develop keys
+80226D98 8022598C 801A4FA0 801A40F4 801A44C4 801A45C8 801601AC 8000533C
+80226bd4 is func, 
+
+80034110 seems to be player_t *PlayerFromIndex (int index) (used by handledevelopkeys() to translate player index into player.)  It compares the input param to 6 and branches to a different part of code if it's true, so it can probably do more than just return player_t blocks.  (hmm...)
+
+8011D0A4 38C000XX
+
+
+for damage:
+player one block 80453080
+player two block 80453F10
+player thr block 80454DA0
+
+80453080
+0xE90 in length
+0x60 is damage
+
+80034494 writes to damage [ 80034418 ] takes player index(?), zero, and new damage, and writes it.
+lr 8006CD6C. [ 8006CC7C ] gets player in r3 and damage(?) in f1
+lr 8006D380, [ 8006D1EC ], called all the time
+
+POKE 80001C00 7C0802A6
+POKE 80001C04 90010004
+POKE 80001C08 9421FFC4
+POKE 80001C0C 93E10008
+POKE 80001C10 93C1000C
+POKE 80001C14 93A10010
+POKE 80001C18 93810014
+POKE 80001C1C 7C7F1B78
+POKE 80001C20 3FC08000
+POKE 80001C24 63DE2810
+POKE 80001C28 3CC08047
+POKE 80001C2C 60C69D30
+POKE 80001C30 80C60028
+POKE 80001C34 1CFF0004
+POKE 80001C38 7F9E3A14
+POKE 80001C3C 80FC0028
+POKE 80001C40 7C063800
+POKE 80001C44 41800020
+POKE 80001C48 7CDD3378
+POKE 80001C4C 7FE3FB78
+POKE 80001C50 809E0020
+POKE 80001C54 48000031
+POKE 80001C58 A0FE0026
+POKE 80001C5C 7D07EA14
+POKE 80001C60 911C0028
+POKE 80001C64 83810014
+POKE 80001C68 83A10010
+POKE 80001C6C 83C1000C
+POKE 80001C70 83E10008
+POKE 80001C74 3821003C
+POKE 80001C78 80010004
+POKE 80001C7C 7C0803A6
+POKE 80001C80 48224848
+POKE 80001C84 7C0802A6
+POKE 80001C88 90010004
+POKE 80001C8C 9421FFF0
+POKE 80001C90 90810008
+POKE 80001C94 4803247D
+POKE 80001C98 2C030000
+POKE 80001C9C 41820010
+POKE 80001CA0 8063002C
+POKE 80001CA4 C0210008
+POKE 80001CA8 4806AFD5
+POKE 80001CAC 38210010
+POKE 80001CB0 80010004
+POKE 80001CB4 7C0803A6
+POKE 80001CB8 4E800020
+
+#branch from 802264C4 to 80001C00 = DDB73C
+POKE 802264C4 4BDDB73C
+
+80034494 writes to damage [ 80034418 ] takes player index(?), zero, and new damage, and writes it.
+lr 8006CD6C. [ 8006CC7C ] gets SUB player in r3 and damage(?) in f1
+lr 8006D380, [ 8006D1EC ], called all the time
+
+crash at heart = 157bf 157aa 157bf
+
+
+8000533C
+POKE 8034DDA8 4BCB7594
+
+crash at 803dad08
+
+----------------------------------------------------
+notes for the "remove status buffs" section
+
+players are 80d00f80 80db8680 80efadc0 810124a0 
+
+So, all offsets are from the SUB player.
+Metal:	0x2028
+star:	0x2004
+cloak:	0x2030
+bunny:	0x2014
+mush:	0x2008
+
+function index-action values
+0: nothing
+1: no damage
+2: normal
+3: no delay
+4: remove status
+5: big mushroom
+
+
+ApplyMetal at 800C8348 does NOT apply the physics flags
+from here, back chain is
+80087224
+8009463C
+80094ad0 [ 80094A14 ]
+8006ab78 <- a func pointer call.
+80390e00
+801a4fa4
+
+POKE 80087228 60000000
+so 800D105C applies the physics flags of metal.
+
+80ce7af0 at 80d013f0 sub+0x490
+80D011F4 = 
+sub player == 80D00D40
+80D011D0
+POKE 80D011D0 80ce7938
+
+800BF8D0 reads rgb
+byte at 80D01244 controls read of color (high bit)
+ok... the rrggbbaa is recalculated each game frame by the floats
+after it, but the renderer uses the packed 4 byte val to actually apply
+the color.
+(If you pause the game, poking to rrggbbaa changes the color displayed.
+If you poke to the floats, nothing changes.  While the game is running, poking
+to rrggbbaa has no effect, but poking to the floats changes things.)
+
+800144B0 writes to the flag vals.
+
+80ce78c4
+80ce78d0
+80ce78d8
+
+80ce7938
+80ce7944
+80ce794c
+
+80ce6d14
+3c
+48
+30
+
+---------------------------------------
+save/load from a different file
+
+#change the filename to "DuperSmashBros0110290334"
+POKE 803BAC5C 44757065
+
+#change the string displayed
+POKE 803BAC3C 4861636B
+
+
+heap_t //8 words total.
+{
+	heap_t *next;
+	heap_t *prev;
+	int size; //includes sizeof (heap_t)
+	int flags; //could be 1 byte per unknown
+	int unknown[4]; //not always zero, not always valid pointers, either
+}
+Next points to the start of the next heap_t.  I haven't seen any with a
+size of less than 0x40, so I think it may pad to 0x20 by default.  Heap_t
+usually comes before pointers to the memory block.  (i.e. the only pointers
+to heap_t are from other heap_t; the game uses pointers to the real data,
+which is after heap_t.)
+
+
+
+entity_t //64 bytes
+{
+	short class;
+	byte unknown1;
+	byte unknown2;
+	short zero;
+	byte three;
+	byte class; //?
+	entity_t *next;
+	entity_t *prev;
+	entity_t *next; //these pairs are always the same.
+	entity_t *prev; //they seem to only link objects of the same type
+	void *unknown; (linked list of something)
+	void (*framefunc)(entity_t *self, int code);
+	int null1;
+	int null2;
+	void *unknownnon_heap;
+	void *entity_data;
+	void (*data_destructor)(void *ed);	
+}
+
+player:	80D00F00		item: 80EE3800
+00040805			00060906
+00000304			00000306
+80e06260			80F10020
+00000000			80f0d200
+80e06260			80f10020
+00000000			80f0d200
+80e01860			80f0fee0
+80080e18	frame function	8026eecc
+00000000			00000000
+00000000			00000000
+80d00be0  <-not heap pointers->	80ee2020
+80d00f60 <- sub player_t	80f0eca0
+8006dabc destructor for ^^	8026ae10
+00000000			00000000
+00000000			00000000
+00000000			00000000
+
+void (*framefunc)(entity_t *self, int code);
+
+80d00f00
+heap block at 80d00ee0
+80343F90 writes [ 80343f34 ]
+lr 8037F210 [ 8037F1E4 ]  
+8037aa3c [ 8037A968 ]
+8037acc0 [ 8037ABC8 ] called lots of places
+8037a62c [ 8037A610 ] takes NO params.
+8036f2e8
+
+[ 8037F1E4 ] = malloc ()?
+returns NULL on malloc(0)
+sizeof (sub_item_t) == 0x1000 (actually 0xFCC, rounds to 1000)
+lr 8037AA3C
+8037ACC0
+80268754 [ 8026862C ]
+80268B48 [ 80268B18 ] <- this IS "spawnanItem"
+8026C970 [ 8026C88C ] called frame, takes no params.
+
+8026C970
+80268B18 "Spawn entity"
+spawn_item_t (not bigger than 0x58 bytes)
+{
+	0x00: pointer to player (if applicable)
+	0x04: same as 0x00 (?)
+	0x08: item type index
+	0x0C: i THINK it's a sub type (what kind of food, etc.)
+	0x10: odd pointer (80cbf0c0) (depends on how melee started)
+		(set to 0 by SpawnEntity; is never read).  May be
+		leftover garbage from the stack)
+	0x14: X coord (float)
+	0x18: Y coord (float)
+	0x1C: z coord
+	0x20: X coord again (derp?)
+	0x24: Y again
+	0x28: z again (?)
+	0x2C: X velocity
+	0x30: Y velocity
+	0x34: Z velocity
+	0x38: 1 or -1 (angular velocity)
+	0x44: 0x80000000
+	0x48: set to 1 by SpawnItem
+}
+
+two heaps of mewtwoball:
+80f12000 80f00e20
+
+
+lr save for "spawn entity" called from dpad drop
+8022647C [ 802262E0 ]
+8022655c
+80001a20
+
+apply metal box called from
+8009463C [ 8009447C ] seems to be "ApplyInstantItem (player_t, item_t)
+80094AD0 [ 80094A14 ] (seems to be a graphical mostly func)
+
+[ 8026A8EC ] = DestroyItem ()
+
+8006AB78
+
+80D028D4 holds the item that the player is associated with
+sub_player_t + 0x1974
+0x197C is where bunny hoods go.
+800948E8 writes here on pickup [ 800948A8 ] = GiveItemToPlayer
+8007E77C writes here on loss
+
+GiveItemToPlayer: doesn't... quite work right.  it is called for both instants 
+and holds, but when I call it the instant gets held.  shit.
+
+toplayer:
+heavy: 80094A8C [ 80094A14 ]
+light: 80094A8C
+instant: same
+NOT called for touch
+
+8006F238 = ?
+
+aha.  So a metal effect, if applied, can be nullified if damage is applied
+in the same frame.  What the fuck?
+Aha.  Seems that if you get damaged enough, you lose metal.  I think this is
+a global thing; i.e. it always happens, even in normal game.
+So we need to change how we apply damage.
+
+bunny hood:
+lr 8009462C [ 
+
+hood from down on the ground
+pointer player 0xE 0 0x1F 0 0   0x4 0x7 0
+pointer pre    big 3fc 0x1f 0 0 0x5 ff8 1
+
+[ 800942A0 ] (player_t) seems to be a "FindClosestItemInRange" function.  It is 
+called anytime a player's action MIGHT generate an item pick up (i.e. z in the 
+air, a onn the ground).  Returns NULL if nothing found.  It seems to walk the list
+of items and check the bounds of each.  No other effects are obvious.
+
+POKE 80094A90 4BFDA7A9
+POKE 80094A90 60000000
+
+subplayer_t + 0x2330 = hammer time!
++ 0x2000
+
+mewtwo fires bombs
+from 802C5090, 0x70
+802C5000 some sort of generic "spawn projectile" function?
+80147544
+POKE 80147538 38C00006
+
+figure out starman
+applystarman listed as 8007B7FC (subplayer_t *, int duration)
+lr 80077D28 called by [ 80077C60 ] (subitem_t *, ...) called on mushrooms too
+lr 80079990, [ 8007925C ], every frame.
+
+
+-----------------------------------------------------------
+80041EE4 is some sort of initialization func.  (Init of physics_t?)
+it's called for players, items, seemingly everything.
+
+for players, it's lr 80081B9C
+
+It gets passed 0x6F0 from subplayer_t
+
+POKE 80D0165C 41400000
+POKE 80D01668 41400000
+POKE 80D01674 41400000
+POKE 80D01680 41400000
+
+r5 (-1) stored to 3c, 40, 44, 14c, 188, 174, 160, 48, 4c
+POKE 80D0168C 00000000
+POKE 80D01690 00000000
+POKE 80D01694 00000000
+POKE 80D01698 00000000
+POKE 80D0169C 00000000
+
+POKE 80D01698 FFFFFFFF
+
+damnit... phys_t is one of those irritating structs that never seems to
+have any effect.  However, 80D01698, subplayer + 0x738 controls whether
+clipping occurs or not.  (phys + 0x48)
+
+
+80453088 is p1 computer or not.
+80453F18 is p2 = E90 diff
+
+---------------------------------------------------------
+Let's do bonus mode melee now.
+
+We'll replace the "ENDLESS MODE" thing in the rule enum.
+
+#change the text "Endless Mode" to "Bonus Mode"
+POKE 803FA834 426F6E75
+POKE 803FA838 73204D6F
+POKE 803FA83C 64650000
+
+803fa320 holds the value of this selector
+that's 0x1F8(r31)
+
+lwz r3, 0x1F8(r31)
+cmpwi r3, 3
+bne out
+
+lbz r3, 0(r30)
+ori r3, r3, 0x60
+stb r3, 0(r30)
+
+melee_t
+1200064C C3000000 00000002 FF6E001F	time
+3000864C C3000000 00000002 FF6E001F	stock
+5200064C				coin
+7200064C				bonus
+
+
+2fff90 for time
+2fffdc for stock
+2ffffc for coin
+30004c for 3
+
+POKE 80300054 60000060
+#branch from 8030005C to 802FFF9C = FFFFFF40
+POKE 8030005C 4BFFFF40
+
+
+
+-----------------------
+hammer duration:
+800C5318:  800306AC	lwz	r0,1708(r3)
+
+bigmush duration:
+800D1608:  80040688	lwz	r0,1672(r4) [new]
+800D1550:  80040688	lwz	r0,1672(r4) [existing]
+
+smallmush duration:
+800D1FA4:  80040688	lwz	r0,1672(r4) [new]
+800D1EEC:  80040688	lwz	r0,1672(r4) [existing]
+
+-------------------------------------
+ice climbers team shit
+
+first subplayer_t allocation:
+lr 8037AA3C
+stack:
+8037ACC0
+80068EEC [ 80068E98 ] (r3)
+80031BCC [ 80031AD0 ] (r3 == player slot index to load)
+8016E570
+8016E884 (probably within startmelee)
+8016e94c
+801a40e8
+801a44c4
+801a45c8
+801601ac
+8000533c
+
+lr 8037AA3C
+8037acc0
+80068eec [ 80068E98 ] (r3)
+80031c60 [ 80031AD0 ]
+8016e570
+8016e884
+8016e94c
+801a40e8
+801a44c4
+801a45c8
+801601ac
+8000533c
+
+[ 80068E98 ] is allocating a player.  r3 is a pointer to a block that has
+internal player index as its first entry
+spawn_player_block_t
+{
+	int internal_index;
+	byte slot; //which player slot to associate with
+	byte something2; //usually 0xFF
+	byte flags;
+};
+flags: 0x2A = normal person, 0x80 = nana, 0x00 = exact copy of player
+0x29 = player spawned for multi-match fight
+
+
+replace 80031BE4 with li r29, 
+POKE 80031BE4 3BA00010
+#POKE 80031BE4 7C7D0774
+
+
+from 80031BE4, we can use r29
+
+from 80031C5C, instead of branching to place, branch off and run it twice... or 4 times
+
+#branch from 80031C5C to 80002F00 = FD12A4
+POKE 80031C5C 4BFD12A4
+#POKE 80031C5C 4803723D
+
+POKE 80002F00 48065F99
+POKE 80002F04 38610018
+POKE 80002F08 48065F91
+POKE 80002F0C 38610018
+POKE 80002F10 48065F89
+POKE 80002F14 38610018
+POKE 80002F18 48065F81
+POKE 80002F1C 4802ED44
+
+
+
+not fiddling with nana at all:
+
+#branch from 80031BCC to 80002f00 = fd1334
+POKE 80031BCC 4BFD1334
+#POKE 80031BCC 907E00B0
+
+POKE 80002F00 907E00B0
+POKE 80002F04 38600080
+POKE 80002F08 9861002A
+POKE 80002F0C 38610024
+POKE 80002F10 48065F89
+POKE 80002F14 4802ECBC
+
+
+
+player_t values
+one: 1 00000000
+twp: 2 004cfb5f (garbage?)
+thr: 3 0112909a
+fur: 4 01000000
+
+
+3 dopples:
+POKE 80002F00 907E00B0
+POKE 80002F04 38600080
+POKE 80002F08 9861002A
+POKE 80002F0C 38610024
+POKE 80002F10 48065F89
+POKE 80002F14 38610024
+POKE 80002F18 48065F81
+POKE 80002F1C 38610024
+POKE 80002F20 48065F79
+POKE 80002F24 4802ECAC
+
+crashing at 80087300, [ 80087300 ]
+called often, but not constant.
+from 8003F77C on take damage
+from 8003F77C again next frame
+from 8003F77C after mario disappears
+from 8003DF64 in a bubble [ 8003DF44 ]
+from 800364A0 when he poofs off in the background
+from 8003D6C8 in same spot
+
+right when they go off: in 3df44
+8003DF5C:  4BFF6231	bl	0x8003418c
+8003DF60:  480493A1	bl	0x80087300
+3418c isn't checked.
+
+nop out this function.
+lr 800D419C, 
+POKE 800D4198 60000000
+this has no effect on anything; wtf?
+
+this function returns nothing, it seems, so blank it out.
+POKE 8003DF44 4E800020
+
+
+crashed at 80086C0C,
+8003D680
+800D35D0
+800D4520
+8006AB78
+80390E00
+801A4FA4
+801A40F4
+801A44C4
+801A45C8
+801601AC
+8000533C
+
+ok, so it's 8003418c that's returning NULL and causing the problem.
+r4 seems to offset the struct some...
+I'm not seeing a nonzero r4.  If I have dopplers, it is sometimes 1
+
+80d00ce0
+80db83e0
+
+80dee820
+80ee4040
+
+Setting the "sub player" correctly makes the game not crash
+however, this will cause problems for ice climbers.
+
+POKE 80002F00 907E00B0
+POKE 80002F04 38600080
+POKE 80002F08 9861002A
+POKE 80002F0C 38610024
+POKE 80002F10 48065F89
+POKE 80002F14 907E00B4
+POKE 80002F18 38610024
+POKE 80002F1C 48065F7D
+POKE 80002F20 38610024
+POKE 80002F24 48065F75
+POKE 80002F28 4802ECA8
+
+
+POKE 80002F00 907E00B0
+POKE 80002F04 38600080
+POKE 80002F08 9861002A
+POKE 80002F0C 38610024
+POKE 80002F10 48065F89
+POKE 80002F14 907E00B4
+POKE 80002F18 4802ECB8
+
+
+test:
+POKE 80002F00 907E00B0
+POKE 80002F04 38600080
+POKE 80002F08 9861002A
+POKE 80002F0C 38610024
+POKE 80002F10 48065F89
+POKE 80002F14 907E00B4
+POKE 80002F18 3B604387
+POKE 80002F1C 4802ECB4
+
+
+POKE 80031BCC 4BFD1334
+POKE 80002F00 907E00B0
+POKE 80002F04 38600080
+POKE 80002F08 9861002A
+POKE 80002F0C 38610024
+POKE 80002F10 48065F89
+POKE 80002F14 907E00B4
+POKE 80002F18 4802ECB8
+
+One clone:
+04031BCC 4BFD1334
+04002F00 907E00B0
+04002F04 38600080
+04002F08 9861002A
+04002F0C 38610024
+04002F10 48065F89
+04002F14 907E00B4
+04002F18 4802ECB8
+
+two clones:
+04031BCC 4BFD1334
+04002F00 907E00B0
+04002F04 38600080
+04002F08 9861002A
+04002F0C 38610024
+04002F10 48065F89
+04002F14 907E00B4
+04002F18 38610024
+04002F1C 48065F7D
+04002F20 4802ECB0
+
+three clones:
+04031BCC 4BFD1334
+04002F00 907E00B0
+04002F04 38600080
+04002F08 9861002A
+04002F0C 38610024
+04002F10 48065F89
+04002F14 907E00B4
+04002F18 38610024
+04002F1C 48065F7D
+04002F20 38610024
+04002F24 48065F75
+04002F28 4802ECA8
+
+
+
+
+
+******************************************************
+	buffer overflow search
+
+
+Rumble mode: infinite crash
+exiting from trophy display crashed
+name entry infinite crash
+name entry:
+DATE Feb 13 2002  TIME 22:06:27
+- STACK ---------------------------------------------
+ Address:  Back Chain  LR Save
+804EE828:   DDDDDDDD   DDDDDDDD
+Non-recoverable Exception 2
+------------------------- Context 0x804a83c8 -------------------------
+r0   = 0xdc5e5ddd (-     597795363)  r16  = 0x804a0704 (-    2142632188)
+r1   = 0x804ee738 (-    2142312648)  r17  = 0x803ed918 (-    2143364840)
+r2   = 0x804df9e0 (-    2142373408)  r18  = 0x804a0714 (-    2142632172)
+r3   = 0x00000001 (             1)  r19  = 0x803ed878 (-    2143365000)
+r4   = 0x80000000 (-    2147483648)  r20  = 0x803ed938 (-    2143364808)
+r5   = 0x017f8000 (      25133056)  r21  = 0x804a0718 (-    2142632168)
+r6   = 0x00000000 (             0)  r22  = 0x8135f440 (-    2127170496)
+r7   = 0xfffffff8 (-             8)  r23  = 0x43300000 (    1127219200)
+r8   = 0x08000000 (     134217728)  r24  = 0x804a04f0 (-    2142632720)
+r9   = 0x00000032 (            50)  r25  = 0x00000003 (             3)
+r10  = 0x00000001 (             1)  r26  = 0x00000000 (             0)
+r11  = 0x00000000 (             0)  r27  = 0x00000010 (            16)
+r12  = 0x00000004 (             4)  r28  = 0xdddddddd (-     572662307)
+r13  = 0x804db6a0 (-    2142390624)  r29  = 0x00000001 (             1)
+r14  = 0x803ed8fc (-    2143364868)  r30  = 0x8040ab00 (-    2143245568)
+r15  = 0x804a0710 (-    2142632176)  r31  = 0x80000000 (-    2147483648)
+LR   = 0x80394a9c                   CR   = 0x40800088
+SRR0 = 0x80394ac8                   SRR1 = 0x00001030
+
+GQRs----------
+gqr0 = 0x00000000        gqr4 = 0x00060006
+gqr1 = 0x00000000        gqr5 = 0x00070007
+gqr2 = 0x00040004        gqr6 = 0x3d043d04
+gqr3 = 0x00050005        gqr7 = 0x00000000
+
+
+FPRs----------
+fr0     = -1     fr1    = 256
+fr2     = 0      fr3    = 0
+fr4     = 0      fr5    = 0
+fr6     = 17     fr7    = 0
+fr8     = 0      fr9    = 0
+fr10    = 0      fr11   = 0
+fr12    = 5      fr13   = 0
+fr14    = 0      fr15   = 0
+fr16    = 0      fr17   = 0
+fr18    = 0      fr19   = 0
+fr20    = 0      fr21   = 0
+fr22    = 0      fr23   = 0
+fr24    = 0      fr25   = 0
+fr26    = 0      fr27   = 0
+fr28    = 0      fr29   = 1
+fr30    = 0      fr31   = 0
+
+
+PSFs----------
+ps0     = 0x0    ps1    = 0xffffffff
+ps2     = 0x0    ps3    = 0x0
+ps4     = 0x0    ps5    = 0x0
+ps6     = 0x3800040      ps7    = 0x0
+ps8     = 0x0    ps9    = 0x0
+ps10    = 0x0    ps11   = 0x0
+ps12    = 0x1333         ps13   = 0x0
+ps14    = 0x0    ps15   = 0x0
+ps16    = 0x0    ps17   = 0x0
+ps18    = 0x0    ps19   = 0x0
+ps20    = 0x0    ps21   = 0x0
+ps22    = 0x0    ps23   = 0x0
+ps24    = 0x0    ps25   = 0x0
+ps26    = 0x0    ps27   = 0x0
+ps28    = 0x0    ps29   = 0x1
+ps30    = 0x0    ps31   = 0x0
+
+Address:      Back Chain    LR Save
+0x804ee738:   0x804ee760    0x80394a9c
+0x804ee760:   0x804ee7f0    0x80228c00
+0x804ee7f0:   0x804ee828    0x803458fc
+0x804ee828:   0xdddddddd    0xdddddddd
+DATE Feb 13 2002  TIME 22:06:27
+- STACK ---------------------------------------------
+ Address:  Back Chain  LR Save
+804EE408:   804EE700   803455
+804EE700:   804EE738   80345944
+804EE738:   804EE760   80394A9C
+804EE760:   804EE7F0   80228C00
+804EE7F0:   804EE828   803458FC
+804EE828:   DDDDDDDD   DDDDDDDD
+
+so the lr listed in the first dump is 80394A48, in [ 80394A48  ]
+The call, if we're to believe it, is 80347be4
+
+if I set a bpx on 80394A48  , I get a stack trace like this:
+Address:      Back Chain    LR Save
+0x804ee760:   0x804ee7f0    0x80228c00
+0x804ee7f0:   0x804ee828    0x803458fc
+0x804ee828:   0xdddddddd    0xdddddddd
+The last saved lr in that chain, 803458fc, is a blrl in [ 80345870  ]
+trying to catch that crashed hard.
+holy shit:
+803436D0:  480021A0     b       0x80345870
+80345870:  7C0802A6     mflr    r0
+80347C90:  4BFFDBE1     bl      0x80345870
+
+[ 80347C38  ] holds the bl in that holy shit list
+
+Ok.  So, we have our buffer overflow.  It's there.  The data from the memory card is being copied to the stack.  DD0680DD is the first value that's copied to the bad place
+So, set a breakpoint on the READ of 8045D924, where that value is on the memory card.
+
+Hits at 8032588C, which looks vaguely like a copy routine.  No, it's some kind of search
+Ok.  So we break on the read of our memcard area, then break on the WRITE of the stack location that makes everything go crazy.  And we have it.  
+no, we don't.  memcpy goes backwards, so the interesting info is already lost.  maybe.
+Next time, bpx on 80003220 after the read.
+stack	 lr
+	 80323FC8
+804ee3B0 8035ce98
+804ee618 803240c0
+804ee648 80323e04
+804ee828 803a6c50
+
+
+The one who calls the memcpy is [ 80323F80 80323FE0 ]
+we get it.
+
+804ee618 803240C0
+804ee648 80323e04
+804ee828 803a6c50
+804ee8f8 80239e44
+804ee958 8023a77c
+804eea98 8023b03c
+804eeac8 8022d6e4
+804eeaf8 80390e00
+804eeb48 801a4fa4
+804eeb80 801a40f4
+804eebb0 801a44c4
+804eebd0 801a45c8
+804eebf8 801601ac
+ffffffff 8000533c
+
+The target address, the one that overflows, is 804ee754, in the frame 
+804ee648 80323e04, [ 80323DC8  ]
+strike that, it's in 803a6c50, [ 803A6B98  ]
+
+[ 80239A24  ] calls [ 803A6B98  ] 24 times in a loop.  There are 24 names displayed at a time on the screen.  [ 80239A24  ] is called only once.
+
+
+80325B04 looks like a strlen() function.  if strlen (name) is zero, [ 80324044  ] exits.  If it's not zero, 80324044 calls the blrl function that was passed in.  This blrl corrupts the stack, if applicable
+
+So, target buffer is 804EE630, we need to write to 804ee82C, so an overflow of 1fc, 508 bytes.
+Starting at 8045D850
+
+no, wrong.  target buffer is actually 804EE754, need to get to 82c, so overflow is D8, 216
+
+# First, some garbage.  In theory this can be anything that doesn't have
+# any zero bytes, but since this exact pattern is what works, I'm not changing it.
+POKE 8045D850 DD064BDD
+POKE 8045D854 DD064CDD
+POKE 8045D858 DD064DDD
+POKE 8045D85C DD064EDD
+POKE 8045D860 DD064FDD
+POKE 8045D864 DD0650DD
+POKE 8045D868 DD0651DD
+POKE 8045D86C DD0652DD
+POKE 8045D870 DD0653DD
+POKE 8045D874 DD0654DD
+POKE 8045D878 DD0655DD
+POKE 8045D87C DD0656DD
+POKE 8045D880 DD0657DD
+POKE 8045D884 DD0658DD
+POKE 8045D888 DD0659DD
+POKE 8045D88C DD065ADD
+POKE 8045D890 DD065BDD
+POKE 8045D894 DD065CDD
+POKE 8045D898 DD065DDD
+POKE 8045D89C DD065EDD
+POKE 8045D8A0 DD065FDD
+POKE 8045D8A4 DD0660DD
+POKE 8045D8A8 DD0661DD
+POKE 8045D8AC DD0662DD
+POKE 8045D8B0 DD0663DD
+POKE 8045D8B4 DD0664DD
+POKE 8045D8B8 DD0665DD
+POKE 8045D8BC DD0666DD
+POKE 8045D8C0 DD0667DD
+POKE 8045D8C4 DD0668DD
+POKE 8045D8C8 DD0669DD
+POKE 8045D8CC DD066ADD
+POKE 8045D8D0 DD066BDD
+POKE 8045D8D4 DD066CDD
+POKE 8045D8D8 DD066DDD
+POKE 8045D8DC DD066EDD
+POKE 8045D8E0 DD066FDD
+POKE 8045D8E4 DD0670DD
+POKE 8045D8E8 DD0671DD
+POKE 8045D8EC DD0672DD
+POKE 8045D8F0 DD0673DD
+POKE 8045D8F4 DD0674DD
+POKE 8045D8F8 DD0675DD
+POKE 8045D8FC DD0676DD
+POKE 8045D900 DD0677DD
+POKE 8045D904 DD0678DD
+POKE 8045D908 DD0679DD
+POKE 8045D90C DD067ADD
+POKE 8045D910 DD067BDD
+POKE 8045D914 DD067CDD
+POKE 8045D918 DD067DDD
+POKE 8045D91C DD067EDD
+POKE 8045D920 DD067FDD
+# The saved stack pointer that's in the memory already
+POKE 8045D924 804EE8F8
+# The return address.  This is how we get in, we get the game to
+# "return" somewhere where it normally wouldn't.  Then after our
+# code runs, we jump back to the game as if nothing happened.
+POKE 8045D928 8045D930
+# Some zeros to end the string.
+POKE 8045D92C 00000000
+
+# now we start the code that's going to run.  We're hooking into a return path
+# that should return to 80239E44, so that's where we'll branch when we're done.
+# we have full scratch register access.
+# strike that, we branch back to 80239E9C, which should be the end of the 
+# function in question.  Branching back to the "right" place crashes because
+# of the corrupted stack
+POKE 8045D930 38600006
+POKE 8045D934 4BD46959
+POKE 8045D938 60000000
+POKE 8045D93C 60000000
+POKE 8045D940 4BD47221
+POKE 8045D944 4BDDC558
+
+ok.  a name is d9f4 - d850 = 1A4 bytes.  There are... 132.  The names continue right up to the end of memory, so we should clear all of that area once we're done patching.
+
+We have 55228 bytes total to work with.  Current script is ~2000 lines long, ==8000 bytes per track, 2 tracks, so 16k.  More than enough room to grow, with room to spare to save names.
+
+8046AF3C
+
+dump d:\data\doc\ar\start1.bin 8045d850 804616d8
+
+mod the function that calls strlen to always have all names resolve to 0.  Maybe that will
+stop the game from screwing up that area of memory.
+
+disable names:
+POKE 803240A8 480005B4
+stops their display but doesn't prevent shit.
+
+
+Ok.  Leave disabling the names to the patcher, since that's really an issue it has to worry about anyhow.  However, an issue that we DO have to worry about is not corrupting the hack save file with the same crap the normal one has in it.  So we need to force the new data to load immediately.  Exploring load:
+
+bpx 8001BD34
+804EEA40 8001CC04 [ 8001CBBC  ] takes NO parameters.
+804EEAF8 801AF6EC
+804EEB48 801A4E88
+804EEB80 801A40F4
+804EEBB0 801A44C4
+
+
+Change the name of the original file to "SSBM wParam Master save"
+POKE 803BAC1C 5353424D
+POKE 803BAC20 20775061
+POKE 803BAC24 72616D20
+POKE 803BAC28 4D617374
+POKE 803BAC2C 65722048
+POKE 803BAC30 61636B20
+POKE 803BAC34 53617665
+POKE 803BAC38 20202020
+
+
+
+on hitting "new" in name entry, the name is read twice, by 
+802379D0
+802382A8 in [ 8023817C  ]
+802379D0 reads all the time from other areas and other reasons.
+
+POKE 802382E4 38600078
+
+[ 8023817C  ] is a large function, and is the "frame function" for the name entry menu
+NOP 
+noping this line made "new name" not appear.  That was the problem, it was completely blank.
+POKE 802382E8 60000000
+
+[ 8023E32C 8023E62C ] seems to be the name function.
+81366D00 is storing SOMETHING to do with the current menu displayed.  Or current screen.  Or something.  It's onvolved somehow.  Byte +1 shows what menu is currently selected.  So call it "menu tracking thing"  
+
+8023E350:  3B630000	addi	r27,r3,0
+replace with li r27, 120
+POKE 8023E350 3B600084
+
+force 
+
+8045D850 is name 0
+80469D30 is name 120
+80469B8C is name 119
+8046B0E0 is name 0x84 (max)
+
+
+hmm, 0x80388220 is the assert fail function.
+Maybe we can branch it to the entry point?
+branch from 80388220 to 8000522C = C7D00C
+POKE 80388220 4BC7D00C
+
+
+
+stop things from crashing when they attempt to spawn links or yoshis or whatever
+[ 80031AD0 ] is the function that leads down the assert failure path
+it's called from [ 8016A4C8 ], but not on normal stages.  8016A4C8 is called every frame, presumably for every stage.
+
+80016a854 is the branch instruction that we need to avoid.
+In final destination, the entire function is skipped.  all that runs is:
+8016A4C8:  7C0802A6	mflr	r0
+8016A4CC:  3C608047	lis	r3,-32697
+8016A4D0:  90010004	stw	r0,4(r1)
+8016A4D4:  9421FEE8	stwu	r1,-280(r1)
+8016A4D8:  DBE10110	stfd	f31,272(r1)
+8016A4DC:  BEC100E8	stmw	r22,232(r1)
+8016A4E0:  3BE3B488	subi	r31,r3,19320
+8016A4E4:  3BBF0010	addi	r29,r31,16
+8016A4E8:  3B600000	li	r27,0
+8016A4EC:  881F0010	lbz	r0,16(r31)
+8016A4F0:  5400D7FF	rlwinm.	r0,r0,26,31,31
+8016A4F4:  4182000C	beq-	0x8016a500
+8016A4F8:  38000001	li	r0,1
+8016A4FC:  48000008	b	0x8016a504
+8016A500:  38000000	li	r0,0
+8016A504:  2C000000	cmpwi	r0,0
+8016A508:  4182040C	beq-	0x8016a914  //"return"
+
+8046B488 is r31
+
+POKE 8016A4F8 38000000
+
+POKE 8046B4A4 3F800000
+POKE 8046B4A0 3F800000
+POKE 8046B49C 3F800000
+
+0446B4A4 3F800000
+0446B4A0 3F800000
+0446B49C 3F800000
+
+8046B488 seems to be "multi man craziness"
+8046B498 is some activator (A0 == off, 60 = on)
+8046B4A8 is an array of colors, I think.  One byte per figher in the sequence,
+terminated by 0xFE.  0xFF signals that no one is there/already defeated.
+8046B52A is an array of char types [external index]
+
+Let's see who writes "on" to that space
+80167520
+804eea28 801c2e1c
+804eeac8 80207e6c
+804eeaf8 80390E00 == blrl [ 80390CFC  ]
+804eeb48 801a4fa4
+
+looks like the "think" function was 80382228 --this function is called from many
+different places.
+
+
+ok, now about this trophy getting stage
+the think function seems to be 80219A00.  But I don't know if anything
+else thinks through that function.  But we'll try commenting it out anyway.
+in [ 80219898  ]
+802199FC seems to be the branch that creates the trophy.  It branches to 802f2094.
+POKE 802199FC 60000000
+042199FC 60000000
+
+
+Exploring the stages and their think functions.
+80219898 occurs as data only once, at 803E7D1C.  8021965C reads it
+803E7D1C is 8(r29), r29 is 803E7D14.  r29 comes from an offset into 803e7d00
+The function doing this is [ 802195CC  ].  On map load, it's called twice, with
+an incrementing r3.  For target tests and melee stages, it isn't called at all.
+In fact, for everything i tested, it isn't called.
+[ 80219534  ] calls it.  also not called.
+called from 801C0A4C, blrl, in [ 801C0800  ]
+801c0800 is called on both load and unload map.  It's big and complicated.  Takes one
+parameter, a stack buffer, which seems to contain two integers.  Both params are zero on unload.  It seems to be a "stage number" and a "modifier number", i.e. the physical model and what's going on.  [i.e. "corneria" and "adventure blah" both have 0xE as the first param.
+Hmm, second param may always be the stage index as defined by the debug menu.
+
+
+OOOOK, note: changing the params to 801c0800 does not completely change the stage.  It changes... Well it does strange things.  Changing both to 1 gives me the rainbow cruise physics and background but no stage.
+termina bay: 6/D
+Changing just the second number to 1 (coffee shop) seemed to do nothing.  Changing the first number to 1 makes the stage strange and static
+TTluigi is 33/2c
+
+static player block + 0xAC | 0x40 means 'eligible for multispawn'
+
+8046B488
+
+POKE 80454E4C 40100000
+POKE 80455CDC 40100000
+POKE 80456B6C 40100000
+POKE 804579FC 40100000
+
+POKE 8046B49C 3F800000
+POKE 8046B4A0 3F800000
+POKE 8046B4A4 3F800000
+POKE 8046B4A8 00010203
+POKE 8046B4AC 000102FE
+
+POKE 8046B528 00000203
+POKE 8046B52C 02030203
+POKE 8046B530 02030000
+
+POKE 8046B48C 00000108
+
+POKE 8046B498 60000000
+
+
+
+
+-------------------------
+Akamei:
+- STACK ---------------------------------------------
+ Address:  Back Chain  LR Save
+804EEAD8:   804EEAF8   801C077C
+804EEAF8:   804EEB10   8022523C
+804EEB10:   804EEB30   8016E800
+804EEB30:   804EEB48   8016E94C
+804EEB48:   804EEB80   801A40E8
+804EEB80:   804EEBB0   801A44C4
+804EEBB0:   804EEBD0   801A45C8
+804EEBD0:   804EEBF8   801601AC
+804EEBF8:   FFFFFFFF   8000533C
+- UNHANDLED EXCEPTION -------------------------------
+DSISR=04000000 DAR=00000008
+ERROR 2: (DSI)
+Instruction at 801C07B4 (read from SRR0) attempted
+to access invalid address 00000008 (read from DAR)
+Load operation.
+
+crash happens in [ 801C0754 801C07FC ]
+803DFEDC is some sort of table. related to maps.
+Indexed by "grkind", as passed to stage functions.
+akameia is 1a/15
+final dest is 25/20=28
+rainbow cruise:3/b
+ice mountain 16/19
+
+Gives us edc + 1a*4
+POKE 803DFF44 803E5764
+^^ gets us to "stageid failed" theing
+POKE 803DFF44 803DFEA8
+POKE 803DFF44 803E7F90
+POKE 803DFF44 803E4ECC
+POKE 803DFF44 803E6420
+POKE 803DFF44 803e2d20
+
+POKE 803DFF44 803E6BE0
+candidates for akamai:
+803E2460
+803E6BE0  *== no
+803E9A50
+
+803E6420
+
+POKE 803DFEB0 803E1198
+
+ok, map_thing_block_t (0x34 bytes)
+{
+	0x00: long: "grkind"
+	0x04: void*: unknown data pointer
+	0x08: char*: map filename
+	0x0C: void*: unknown code pointer
+	0x10: void*: unknown code pointer
+	0x14: void*: unknown code pointer
+	0x18: ""
+	0x1C: ""
+	0x20: ""
+	0x24: ""
+	0x28: int: unknown non-zero small int
+	0x2C: int: unknown data pointer
+	0x30: int: small integer
+}
+	
+
+POKE 803DFF70 803E5764
+
+POKE 803DFF70 803DFEA8
+POKE 803DFEA8 00000025
+
+changing this table only leads to the ground.c:2310 assert.
+string: 803E0164
+817FA06C
+804EE960 80347B54
+   eea30 817f8434
+   eeaa8 80345718
+   eead8 801c2a70
+   eeaf8 801c07d0
+
+so 801C2A6C seems to be the call to OsPrint(). Or something.
+in [ 801C28CC 801C2AD4 ]
+801C2A88 is an infinite loop in this function.  Let's change it to "return"
+# branch from 801C2AAC to 801C2AC4 = 18
+POKE 801C2AAC 48000018
+^^ this passes the stageid mismatch thing, and gets us to "bgm!=BGM_Undefined"
+ok, so bgm
+[ 801C24F8 801C28A8 ]  <- NOT called on match end
+POKE 801C24F8 38600000
+POKE 801C24FC 4E800020
+^^ no music and no assert failure
+POKE 801C24F8 7C0802A6
+POKE 801C24FC 3CC0804A
+801C284C is the start of the assert fail block.
+
+
+
+#stages with missing params play anyhow:
+POKE 801C2AAC 48000018
+
+#stages with no music get no music instead of assert failure:
+POKE 801C284C 38600000
+#jump from 801C2850 to 801C2898 = 48
+POKE 801C2850 48000048
+
+
+801C2898
+
+FE9C
+we have 803e
+ice top:
+ground.c:2310: not found stage param in DAT(grkind=22 stkind=26,num=9)
+             check StageParam.csv or StageItem.csv, stdata.c
+ stageid=25
+ stageid=76
+ stageid=116
+ stageid=117
+ stageid=139
+ stageid=171
+ stageid=189
+ stageid=212
+ stageid=263
+
+
+the first one:
+assertion "bgm!=BGM_Undefined" failed in ground.c on line 2242.
+DATE Feb 13 2002  TIME 22:06:27
+- STACK ---------------------------------------------
+ Address:  Back Chain  LR Save
+804EEA70:   804EEA98   803882EC
+804EEA98:   804EEAB8   80388260
+804EEAB8:   804EEAF0   801C2864
+804EEAF0:   804EEAF8   801C28BC
+804EEAF8:   804EEB10   80225158
+804EEB10:   804EEB30   8016E91C
+804EEB30:   804EEB48   8016E94C
+804EEB48:   804EEB80   801A40E8
+804EEB80:   804EEBB0   801A44C4
+804EEBB0:   804EEBD0   801A45C8
+804EEBD0:   804EEBF8   801601AC
+804EEBF8:   FFFFFFFF   8000533C
+
+
+
+ground.c:2310: not found stage param in DAT(grkind=22 stkind=77,num=9)
+             check StageParam.csv or StageItem.csv, stdata.c
+ stageid=25
+ stageid=76
+ stageid=116
+ stageid=117
+ stageid=139
+ stageid=171
+ stageid=189
+ stageid=212
+ stageid=263
+
+
+
+
+8016A798 reads the scale.
+
+
+
+
+
+800693F0 candidate for makesyoudead [ 800693AC  ] ==SetState or something
+eea18 800d3bec
+eea38 800d32f0 = makesyoudead [ 800D3158  ]no
+eeac8 8006be84
+eeaf8 80390e00
+
+[ 800D3BC8  ]
+POKE 
+POKE 8045E04C 7C771B78
+POKE 8045E050 7C982378
+POKE 8045E054 4800E9C5
+POKE 8045E058 7EE3BB78
+POKE 8045E05C 7F04C378
+POKE 8045E060 4800E989
+POKE 8045E064 7EE803A6
+POKE 8045E068 4E800020
+80011944 4E800020
+
+
+Ok, so we think 800D3BC8 is "die".  Rather, "die on bottom"
+first player_t = 80d00ce0
+dead on bottom = 0
+dead on right = 2
+dead on left = 1
+dead on top = 4
+dead on front = 6
+
+800693F0 writes 'dead on top'
+
+804EE948 80db40e0
+804eea18 800d4118 [ 800D40B8  ] takes player_t
+804eea38 800d3230
+     ac8 8006be84
+
+800C8540 is RemoveMetal box.
+
+#branch from 800C8540 to 800D40B8 = BB78
+POKE 800C8540 4800BB78
+
+Right.  stack overflow.
+#Branch from 800C8348 to 800D40B8 = BD70
+POKE 800C8348 4800BD70
+
+
+Small mushrooms make you dead:
+#Branch from 800D21BC to 800D40B8 = 1EFC
+POKE 800D21BC 48001EFC
+#Branch from 800D1FFC to 800D40B8 = 20BC
+POKE 800D1FFC 480020BC
+
+Big mushrooms make you dead
+#Branch from 800D170C to 800D40B8 = 29AC
+POKE 800D170C 480029AC
+#Branch from 800D18CC to 800D40B8 = 27EC
+POKE 800D18CC 480027EC
+
+#Branch from 800D1FFC to 800D3BC8 = 1BCC
+POKE 800D1FFC 48001BCC
+
+mini in your hand
+POKE 80002E10 4000001B
+
+
+80070A40
+804EEA08   8006EE3C
+804EEA40   8006EE3C
+804EEA80   800CCCDC
+804EEA98   80096AD0
+804EEAC8   8006AB78 blrl [ 8006A360  ] = RunPlayer()
+804EEAF8   80390E00 blrl
+804EEB48   801A4FA4
+804EEB80   801A40F4
+804EEBB0   801A44C4
+804EEBD0   801A45C8
+804EEBF8   801601AC
+FFFFFFFF   8000533C
+
+for fun, let's try replacing mewtwo's extended move table with c.falcon's
+POKE 803C1320 803C7788... no
+
+
+
+POKE 800025B0 5525043E
+POKE 800025B4 2C060000
+POKE 800025B8 4182000C
+POKE 800025BC 80630000
+POKE 800025C0 80840000
+POKE 800025C4 4BFFF634
+
+
+POKE 80002F00 7F03C378
+POKE 80002F04 88830000
+POKE 80002F08 2C040040
+POKE 80002F0C 4082001C
+POKE 80002F10 7F03C378
+POKE 80002F14 83180010
+POKE 80002F18 2C180000
+POKE 80002F1C 4182000C
+POKE 80002F20 80980084
+POKE 80002F24 90830084
+POKE 80002F28 83180010
+POKE 80002F2C 4838C174
+
+POKE 80002F00 4838E038
+
+
+falcon: 80DC2778
+mewtwo: 80d0ab80
+
+POKE 80D00D64 80DC2778
+
+
+POKE 80002F04 88E3006C
+POKE 80002F08 1CE70044
+POKE 80002F0C 3CC0804C
+POKE 80002F10 60C61FAC
+POKE 80002F14 7CA6382E
+POKE 80002F18 2C050008
+POKE 80002F1C 40820020
+POKE 80002F20 80C30010
+POKE 80002F24 2C060000
+POKE 80002F28 41820014
+POKE 80002F2C 80E60080
+POKE 80002F30 90E30080
+POKE 80002F34 80E60084
+POKE 80002F38 90E30084
+POKE 80002F3C 7C0802A6
+POKE 80002F40 48067424
+
+
+#Branch from 8006A360 to 80002F04 = F98BA4
+POKE 8006A360 4BF98BA4
+
+#disable texture issues
+POKE 80388220 4E800020
+
+-------------------------------
+
+Some things fixed by disabling this function, no obvious ill effects.
+
+
+it crashed elsewhere: at 800d9dd4 [ 800D9CE8
+804EEAB0   8006CB04  [ 8006CA5C 8006CB90 ]
+804EEAC8   8006CB04
+804EEAF8   80390E00
+804EEB48   801A4FA4
+804EEB80   801A40F4
+804EEBB0   801A44C4
+804EEBD0   801A45C8
+804EEBF8   801601AC
+FFFFFFFF   8000533C
+
+POKE 80388220 4E800020
+
+Moves are failing with an assert about textures thrown by [ 800704F0  ]
+Let's see if 800704F0 does anything useful.  No return value, apparently
+
+POKE 800704F0 4E800020
+
+#disable all throws
+POKE 8006CA5C 4E800020
+
+[ 8006CA5C 8006CB90 ] is specifically for throws.  Disabling seems to disable all throw attempts.
+
+
+Trying "taking damage makes you dead"
+80070348:  80630000	lwz	r3,0(r3)
+assign damage is 8006CC7C
+But takess ub_player-t, so we have to load the player_t from it
+
+POKE 8006CC7C 80630000
+#Branch from 8006CC80 to 800D3BC8 = 66F48
+POKE 8006CC80 48066F48
+
+undo:
+POKE 8006CC7C 7C0802A6
+POKE 8006CC80 90010004
+POKE 800732F0 7FA3EB78
+
+crc? [ 80225754  ]
+I'd believe 80353850.  Crazy xor/rlwimi, takes two params
+
+Trying to give an item from 1 player to another.
+80D00D40 + 1974 = 80D026B4
+80DB8440 + 1974 = 80DB9DB4
+item   <--- this doesn't work.
+
+
+Mewtwo up+b sequence
+0xE
+0x161 by	800693F0
+0x165 by	800693F0 (start teleport)
+0x166 by	800693F0 (end teleport)
+0x23 by 	800693F0
+
+
+POKE 80D00DF4 428CB469
+POKE 80D00E00 428CB469
+POKE 80D01438 428CB469
+POKE 80D01444 428CB469
+POKE 80D01450 428CB469
+POKE 80D0145C 428CB469
+
+POKE 80D01568 00000000
+POKE 80D01564 00000000
+
+POKE 80D00DF4 428CB469
+NEXT
+
+POKE 80D01460 428CB469
+
+
+let's see... 80043980 wrote to the phys_t directly.  
+[ 80043754  ] takes 3 params, func*, phys_t *, int type
+types:
+0 - Transition ground/air
+1 - ground
+2 - pressing Z?  throwing something?
+4 - teleporting?
+6 - air
+
+//force air
+POKE 8004B584 38A00006
+
+
+dummy functions
+801BFFA8
+801BFFAC
+
+What happens if we NULL out a stage's ground file?
+POKE 803E576C 00000000
+
+
+80DB4400
+
+POKE 803FB2E8 00000004
+
+
+ok, 80db8440 + 80db8A9C
+
+
+
+fixing infinite jumps:
+POKE 80002084 800CC1B0
+800CC1AC:  38040001	addi	r0,r4,1
+800CC1B0:  981E1968	stb	r0,6504(r30)
+800CC1B4:  4BFBC5BD	bl	0x80088770
+
+POKE 80002088 800CC300
+800CC2FC:  38040001	addi	r0,r4,1
+800CC300:  981E1968	stb	r0,6504(r30)
+800CC304:  4BFBC46D	bl	0x80088770
+
+POKE 8000208C 800CBB48
+800CBB44:  38040001	addi	r0,r4,1
+800CBB48:  981F1968	stb	r0,6504(r31)
+800CBB4C:  4BFBCC25	bl	0x80088770
+
+POKE 80002090 800CBC98
+800CBC94:  38040001	addi	r0,r4,1
+800CBC98:  981F1968	stb	r0,6504(r31)
+800CBC9C:  4BFBCAD5	bl	0x80088770
+
+POKE 80002094 800CBF38
+800CBF34:  38040001	addi	r0,r4,1
+800CBF38:  981C1968	stb	r0,6504(r28)
+800CBF3C:  4BFBC835	bl	0x80088770
+
+POKE 80002098 800CBE00
+800CBDFC:  38040001	addi	r0,r4,1
+800CBE00:  981D1968	stb	r0,6504(r29)
+800CBE04:  4BFBC96D	bl	0x80088770
+
+r5 destroyed by 80088770, so clear to use it.
+
+
+
+mushrooms make you dead toggles
+Small mushrooms make you dead:
+#Branch from 800D21BC to 800D40B8 = 1EFC
+POKE 800D21BC 48001EFC
+800D21BC:  7C0802A6	mflr	r0
+800D21C0:  90010004	stw	r0,4(r1)
+800D21C4:  9421FFD8	stwu	r1,-40(r1)
+
+
+#Branch from 800D1FFC to 800D40B8 = 20BC
+POKE 800D1FFC 480020BC
+800D1FFC:  7C0802A6	mflr	r0
+800D2000:  90010004	stw	r0,4(r1)
+800D2004:  9421FFD8	stwu	r1,-40(r1)
+
+
+Big mushrooms make you dead
+#Branch from 800D170C to 800D40B8 = 29AC
+POKE 800D170C 480029AC
+800D170C:  7C0802A6	mflr	r0
+800D1710:  90010004	stw	r0,4(r1)
+800D1714:  9421FFD8	stwu	r1,-40(r1)
+
+
+#Branch from 800D1868 to 800D40B8 = 2850
+POKE 800D1868 48002850
+800D1868:  7C0802A6	mflr	r0
+800D186C:  90010004	stw	r0,4(r1)
+800D1870:  9421FFE0	stwu	r1,-32(r1)
+
+all of these functions take only one parameter, so r9 or so should be clear
+We want to hook all of them.  If true, branch to start of kill function.
+If false, execute normally.
+
+So, change the stw r0, 4(r1) instruction to be a branch link
+to our hook.
+
+
+testing, wtf.
+ok, on entry, lr is 800D15A8, r1 is 804EEA98
+
+
+seems my big mushroom air get address is bad
+ok.  So 800693F0 writes to the state.
+stack:
+804EE9D0
+804eea70 00000000
+804eea98 800d1918 [ 800D18CC  ]
+804eeab0 800d15b4 [ 800D14E4  ]
+ac8	 8006a2f8
+
+
+
+8045D850
+name.  Read by 802379D0 on match start [ 802379BC  ] = IsNameValid()?
+
+ok, 80003230 is copying it.
+
+Called by 80323FC8 [ 80323F80  ] <-- last read before match, so this is it
+
+Nowhere is memory is the text stored, except at the memcard address.
+It is not read during a match.
+Conclusion: The game is rendering it into a texture and displaying that
+Therefore, we will not be able to change it while the fight goes on.
+
+
+80efef40
+
+item+c38: this looks like the aarrggbb floatrgb from player_t
+
+[ 80269CC4  ] is writing 0 and -1 to a lot of this.
+POKE 80269CC4 4E800020
+
+
+items:  change the type after it spawns.
+item: 80eff160
+code@80eff218 803f180c 803f5ba8 00000001 80826D50 8085cfc8 8082415c 80826d40
+@80effe64 8028c1a0 8028c1a8
+... and @80effe74: 8028c054 8028c0d0 8028c100
+
+8028c100: while spawning
+80eff6d4 looks like rrggbbaa
+it IS
+in vicinity: 6a8: 1
+6d0:3
+lost color: 6a8=2, 6d0=0
+setting 6d0 to 3 did nothing.  I bet 6d0 is an index into the color table thing.  There was a heap pointer stored in the item for awhile, it disappeared.
+heap @ 80eff6b0
+
+item color: (item base 80eff160)
+6a8: frames remaining for current color
+6b0: pointer to color table
+6d0: unknown, 3 sometimes, 0 other times
+6d4: rrggbbaa
+6d8: float red (0-255?)
+6dc: float green (0-255)
+6e0: float blue (0-255)
+6e4: float alpha
+724: color enable (set to 80000000 == apply color)
+Write to the floats to apply the color, not th eint
+
+bobomb-803f162c 803f5468
+8028c1a0: pickup--no, "while held"
+8028c1a8: same
+
+POKE 800019F8 06222222
+POKE 800019F8 20222222
+
+end of spawn item:
+80268B54
+
+80f11e40
+ef8 803f162c  b8
+efc 803f54d8  bc
+b54  d14
+
+bbc - possibly the time expires?
+358 - holding player?  	
+2480 - e40
+other player-db83e0
+2c40
+2b34
+item_func_data_t
+{
+	void *otherdata;
+	func* 8027d76c	OnCreate(item_t *)
+	func* NULL	OnDestroy (item_t *)
+	func* 8027e0b4  OnPickup (item_t *) (player_t at 0x518 is valid)
+10	func* 8027e648	?
+	func* 80280380	OnThrow (item_t *)
+	func* 80280df0	OnHitPlayer (item_t *) (player_t* target is at subitem+0xCF4)
+			if this function returns 1, the item is 'instant on touch'
+	func* 80280e30	OnTakeDamage (item_t *)
+20	func* 80280e9c	?
+	func* 802810a4	?
+	func* 80281070	?
+	func* null	?
+30	func* 80281104	?
+	func* 802810c4	?
+	func* 80281144	?
+};
+
+otherdata_t
+{
+	int -1
+	func* 8027DC74	FrameOnGround (item_t *)
+	func* 8027DDE8
+	func* 8027ddec
+	int -1...
+
+empty func: 80002F10
+first null:
+POKE 803F1634 00000000
+second null:
+POKE 803F1658 80002F10
+
+
+803f3100 has items >= 0x2B but less than 0xA1
+803F14C4 = table.  0x2A entries total (items 0x00 to 0x2A)
+802679BC writes the itemaction_t to subitem_t.  [ 80267978  ] has the start of that table hardcoded into it.  80267978 both computes and sets the table addy.
+
+8029544c - run every frame starting when item comes to rest on ground
+80295454 - ditto  (void blah(item_t *))
+80295458
+
+
+ok, ok, how to send a player flying away.
+[ 8006D1EC  ]
+The function that calls damage player is called every frame.
+lr is 8006D380
+
+8006D390:  48011701	bl	0x8007ea90
+8006D394:  7FC3F378	mr	r3,r30
+8006D398:  48020599	bl	0x8008d930
+8006D39C:  7FC3F378	mr	r3,r30
+8006D3A0:  48088805	bl	0x800f5ba4
+
+POKE 8006D390 48011701
+POKE 8006D398 48020599
+POKE 8006D3A0 48088805
+
+8008E0B8 writes to the x velocity. [ 8008DCE0  ]
+8007D4A0 to y
+
+[ 8008DCE0  ] takes player as input.
+80DB8440 is playersub
+0x1838 from playersub
+
+
+80efd700
+
+80db8440
+[ 80280df0 80280E2C ]
+
+sp: 804EEA38
+a68
+ac8 8006d380
+af8 80390e00
+b48 801a4fa4
+b80 801a40f4
+	
+
+8007A944 writes   [ 8007A06C 8007AB44 ]
+8007A06C is run every frame, but generally doesn't do anything.
+8007A0BC for "go"
+if r6 is NULL, the function returns right away.
+
+It's controlled by fucking 8007A0BC -20808(r13)
+
+800767C8 800773E4 80078304 <- candidates to set it to 1
+          ^^ the one being used for player hits
+                   ^^ for bob-omb
+[ 80076ED8  ] player hits [ 8007925C 80079AAC ]
+[ 80077C60  ] projectile  [ 8007925C  ]
+80DB9C9C
+
+POKE 80DB9C84 00000000
+POKE 80DB9C88 00000000
+POKE 80DB9C8C 00000000
+POKE 80DB9C90 00000000
+POKE 80DB9C94 00000000
+POKE 80DB9C98 00000000
+POKE 80DB9C9C 00000000
+POKE 80DB9CA0 00000000
+POKE 80DB9CA4 00000000
+POKE 80DB9CA8 00000000
+POKE 80DB9CAC 00000000
+
+POKE 80DB9C84 BF800000
+POKE 80DB9C88 0000003C
+POKE 80DB9C8C 00000000
+POKE 80DB9C90 43160000
+POKE 80DB9C94 00000000
+POKE 80DB9C98 00000000
+POKE 80DB9C9C 00000000
+POKE 80DB9CA0 00000000
+POKE 80DB9CA4 00000000
+POKE 80DB9CA8 80D00CE0
+POKE 80DB9CAC 00000000
+
+end of "frame" 80390EA4
+
+
+Ok.  so it hits everyone.  Metal frames are still a problem.
+but the score needs to be right.
+80035038 updates the kill count. [ 80034FA8  ] <- called only for a kill, not sd
+[ 8003D644  ] called for both kill and sd
+[ 800D34E0  ](player_t *) called on death.  
+
+
+POW box needs:
+ground only
+spawn func
+
+spawn func.
+when items drop, it's called lr 8026C970 [ 8026C88C 8026CA48 ]
+Return value from 8026c75c used as item type.
+
+[ 8026C75C 8026C888 ] = ChooseRandomItem()
+
+8046DB80 = location of item switch during match?
+
+
+crates and things lr is 8026F440
+802862F4
+
+
+test if they're on ground:
+80d01040 seems to be 1 if they're in the air 0f60
+
+
+
+allocateandinit player ends at 800693A8
+
+
+New problem:  sometimes, other items become POWs.
+
+fixed that one.
+
+now: check for metal suppression inside of APplyMetalItem, not every frame.
+
+
+###########################################
+Ok.  Looking into the entity type of the stage.
+80c29700 is where dummy gets put.
+8037AB94 writes there.
+80390028 also.
+80390028 is in the initentity function, or something like that.
+
+ok, scrwe that, fixed camera.
+At startmelee_t + 0x38, 80165290 is set.
+it's called right at the start of the match only.  called by pointer (obviously)
+also called 
+does nothing but call 8002f8f4.. gets r3=0
+8002f8f4 is just 0x80452C68+4 = 4
+80452C68 is a pointer to an entity of type 0x10
+poking 80452C6C to 4 sets fixed camera.
+Don't poke it back to 0 if you started the match in fixed camera mode.
+
+POKE 80452C6C 00000004
+
+The camera value at 80452C6C is an index into a table at 803BCB18, with
+function poitners.  They appear to be void; return value unknown.
+It looks like there are seven values (so 0-6 are valid)
+
+Camera types:
+0: normal
+1: pause view (control stick moves view)
+2: one player view (char off center)
+3: same as 2 except centered
+4: fixed
+5: crazy
+6: (used in demo mode to focus on a player)
+8: the mode develop uses when you lock the camera
+
+FixedCamera() = 8002DDC4
+if it's empty
+POKE 8002DDC4 4E800020
+^ makes camera freeze in place (no camera updates)
+
+camera_t (located at 80452C68)
+{
+	0x00:	entity_t *, pointer to camera entity
+	0x04:	int, camera type (index into 803BCB18)
+	0x0C:	float, related to view distance or something
+	0x10:	float, distance to background?
+	0x14:	float, pan angle (positive=pan right, negative = pan left, units unknown)
+	0x18:	float, tilt angle (positive=up, negative=down)
+	0x1C:	float, also tilt angle (seems to only tilt down, though)
+	0x2C:	float, some kind of pan around point angle
+	0x30:	float, tilt around point angle
+	0x34:	float, depth? (more positive=camera farther away)
+	0x44:	float, fov
+	0x84:	float xtranslate (positive=move right, negative=move left)
+	0x88:	float ytranslate (positive=move up, negative=move down)
+};
+	
+	
+
+ok, using ice climbers as a general guide of what a good range is, we get
+-80 as the point of death, -64 as the bottom of the visible screen
+225, as the top of the screen, 
+
+6jump
+
+180 in y, 220 in x
+
+
+shit
+DATE Feb 13 2002  TIME 22:06:27
+- STACK ---------------------------------------------
+ Address:  Back Chain  LR Save
+804EE890:   804EE8A8   801C9D88
+804EE8A8:   804EE8D0   801C9D88
+804EE8D0:   804EE8F0   80030EC4
+804EE8F0:   804EE9B8   8008E438
+804EE9B8:   804EEA68   8008F71C
+804EEA68:   804EEAC8   8006D3FC
+804EEAC8:   804EEAF8   80390E00
+804EEAF8:   804EEB48   801A4FA4
+804EEB48:   804EEB80   801A40F4
+804EEB80:   804EEBB0   801A44C4
+804EEBB0:   804EEBD0   801A45C8
+804EEBD0:   804EEBF8   801601AC
+804EEBF8:   FFFFFFFF   8000533C
+- UNHANDLED EXCEPTION -------------------------------
+DSISR=04000000 DAR=FFFFFFFF
+ERROR 2: (DSI)
+Instruction at 80370E68 (read from SRR0) attempted
+to access invalid address FFFFFFFF (read from DAR)
+Load operation.
+
+This crash is happening when 8049ED94 becomes a nonzero garbage pointer.
+aha!  8049ED94 is written to on the start of a match, but NOT cleared at the end.
+Dummy, however, does not write to it.
+
+Null out said crashy function?
+POKE 80370BEC 38600000
+POKE 80370BF0 4E800020
+
+Adding a thing to the start of dummy to null out that value seems to stop
+the crashes
+
+
+
+Now, d-pad debug menu
+writes:
+80303878 [ 80303720 ] called only on decrease.
+a90 -
+ab0 80303D30 [ 80303AC4 ] seems to be the key handler
+ac8 80303F98
+af8 80390E00
+That's a nice and short search path.
+
+r30 = instant buttons
+r31 = inuput parameter (r3)
+
+up: 8
+down: 4
+left: 1
+right: 2
+
+r4, as we go, is a sort of amalgomation of button values
+80303edc is "return"
+80303AFC: if start is pressed (instant)
+80303B94: if up held down
+
+
+Add dpad up to the up test
+POKE 80303B88 38030808
+
+POKE 80303AE8 3BC00000
+
+
+
+----------------------------------
+Proper save and load.  Finally doing it.
+
+Memcard block length:
+8046B0E8 - 8046AF44 = 0x1A4.
+The first block we can use is the /second/ to last, the last is used by the name
+entry disabler.
+meaning, it ENDS at 8046AF44
+So, the saves will start at 8046ADA4
+save+1a0 is reserver
+save+19C and 198 MUST be 0
+
+let's see, for the menu we need:
+Save index
+The string
+Index control for string edit
+char for string edit
+save>
+load>
+
+
+about calling the save function:
+--- 8001CD44 [ 8001CC84  ] also seems no params.  called every frame.
+af8 800195ec [ 800195D0  ] no params.  every frame.
+b48 801a4dbc [ 801A4D34  ]
+b80 801a40f4
+bb0 801a44c4
+bd0 801
+
+8001CC84 is the ONLY function that calls SaveGameData, so we'll have to investigate it.
+8001CC84 is called during debug menu, too.
+
+#enable save
+POKE 80433324 00000001
+
+#make sure the sequence number is 0
+POKE 80433320 00000000
+
+Crashes when on debug menu.
+
+
+update:  name 120 is 80469D30, so we will use 80469B98 as our start loc.
+Meaning, memory from 80469D3C to the end last player slot 8046AF38 is open for use, IF
+we deduct from the zeroing instruction in the exploit code.
+
+
+
+POKE 803FB2EC 80002EC0
+
+
+
+
+
+
+No enter state 0x23
+800693F0 [ 800693B4  ] writes.
+
+if we hook 800693B4 and make it never write state 0x23 (exhausted), we get infinite
+dodges and 3rd jumps, but 2nd jumps stop working (if inf. 2nd jumps is enabled).
+The jump counter is written to by 8007D698, which just copies the value from elsewhere
+in sub_player_t.  Ok.  So we have to disable 8007D698 if we want true infinite jumps.
+
+#disable its second line, the actual write.
+poke 8007D69C 60000000
+
+hmm, but if we make the 1st line 8007D698 li r0, 1
+
+8007D698:  80030168	lwz	r0,360(r3)
+8007D69C:  98031968	stb	r0,6504(r3)
+POKE 8007D698 38000001
+POKE 8007D69C 98031968
+
+stuck to the floor: (jump = stand)
+POKE 800CB4FC 3880000E
+
+dodge away:
+POKE 800CB4FC 388000EA
+
+no state 0x23:
+POKE 8009694C 3880001D
+
+
+----------------------------------------
+Looking for a RemoveItemFromPlayer or something
+
+8007E77C writes
+908
+910 80086754 [ 80086724  ]
+930 8026A7D4
+960 80274074
+968 80274240
+9A0 8026ACE0
+9F8 80096044 [ 80095EFC  ] close, but no
+Ac8 8006C9C4
+af8 80390E00
+
+[ 8026A848  ] is potentially the real function we should call.
+It's OuterRemoveItem (item_t, player_t)
+
+or 80273F34 
+
+[ 80273F34  ] (item_t, player_t)  (same result as the innermost)
+
+802741f4 (item_t, int 1)
+perhaps combined with 802754d4 (item_t)?
+POKE 80086724 4E800020  <- crashes.
+Ok, so simply noping the remove function is not what we want.
+
+[ 8026AD20 ] takes stack params (item_t *, vec3_t *pos, vec3_t *vel, int 1, float f1=1)
+called lr 8009609C
+
+80095EFC (player_t) <- didn't even work.
+
+
+Jigglypuff sing taunt
+lr 800C31EC
+800C31D8:  38800129	li	r4,297
+POKE 800C31D8 38800108
+
+Spawned pokemon subitem_t:
+right.  So SPawnEntity:
+a88 8027AD88 [ 8027AB64  ] = SpawnPokemon (pokeball item_t *)
+aa8 80297e08 [ 80297DD8  ] = frame function for "pokeball opening"
+ac8 80269ae4
+af8 80390e00
+
+ditto tables:
+803f2840 803f7fc8
+
+Give ditto an OnDestroy() function:
+POKE 803F2848 
+
+Look at this: THis is after the pokemon is chosen, either through develop or
+randomly.  It tests the type against ditto, and takes some special actions.
+8027ACA0:  80010024	lwz	r0,36(r1)
+8027ACA4:  2C000013	cmpwi	r0,19
+8027ACA8:  40820028	bne-	0x8027acd0
+8027ACAC:  386000B4	li	r3,180
+8027ACB0:  4BFF0711	bl	0x8026b3c0 (count items where type == ditto)
+8027ACB4:  2C030000	cmpwi	r3,0
+8027ACB8:  40820010	bne-	0x8027acc8
+8027ACBC:  4BE0B409	bl	0x800860c4 (count players)
+8027ACC0:  2C030004	cmpwi	r3,4
+8027ACC4:  4082000C	bne-	0x8027acd0
+8027ACC8:  38000000	li	r0,0
+8027ACCC:  90010024	stw	r0,36(r1)
+
+ditto uses states 2 and 0
+
+Ok, looking for a respawn function
+After death, 0xB seems to be the 'starting respawn' state.
+on set 0xb:
+a70 
+a90 800bfdcc [ 800BFD9C  ]
+a98 800d3e2c [ 800D3E00  ] WhileDeadFrameFunction()
+ac8 8006ab78 [ 8006A360  ] PlayerAlsoThink()
+af8 80390e00
+
+800BFD9C is probably RespawnPlayer, but it doesn't work right.
+There must be some seperate RespawnNana.
+No, RespawnNana is CALLED by RespawnPlayer()
+
+for nana:
+a48 800BFD34
+a70 800d4fdc
+a90 800bfe48 [ 800BFD9C  ]
+a98 800d3e2c
+... same as above
+
+
+BAH.  Let's see if we can recognize a hold and steal the item.
+Hold is state 0xD8.  Need to find where the 'holdee' pointer is
+player 2 is 80db83e0
+0x1A58 IS valid on set state 0xD8.  woo.
+800DA214
+800DA214
+
+Stealing is a go.  Can we disable grabs?
+800DA1DC:  388000D8	li	r4,216
+POKE 800DA1DC 388000DA [crashes]
+
+No disabling grabs.  Not easily, anyway
+
+Hammerhead is item 0x28
+
+Mr. saturn tables
+803F1668 803F55D0
+802839BC = MrSaturnHit
+
+Now, we need to find PutToSleep()
+
+State lr
+a80 800C33B8 [ 800C3390 ] called for non-jigglysleep
+a98 800c3334 [ 800C32AC ] NOT called for non-jiggly
+ac8 8006ab78
+390e00
+
+in state 129 (put to sleep, methinks)
+9b8 800C31EC [ 800C318C ]
+a68 8008f708 [ 8008EC90 ]
+ac8 8006D3FC
+390e00
+
+
+32-Bit Implementation  
+ # FR2 = 0x4330000080000000  
+ addis  R0,R0,0x4330  # R0 = 0x43300000  
+ stw  R0,disp(R1)  # store upper half  
+ xoris  R3,R3,0x8000  # flip sign bit  
+ stw  R3,disp+4(R1)  # store lower half  
+ lfd  FR1,disp(R1)  # float load double of value  
+ fsub  FR1,FR1,FR2  # subtract 0x4330000080000000  
+
+# FR2 = 0x4330000000000000  
+ addis  R0,R0,0x4330  # R0 = 0x43300000  
+ stw  R0,disp(R1)  # store high half  
+ stw  R3,disp+4(R1)  # store low half  
+ lfd  FR1,disp(R1)  # float load double of value  
+ fsub  FR1,FR1,FR2  # subtract 0x4330000000000000  
+
+
+RGB stage: 804409FA 80440B0E ?
+80f18b53 *ding!*
+80ed6893
+
+
+so we need to figure out how to find it.
+800140DC is writing to it.  lr, pointer
+
+[ 80014258 ] receives the color_t in r4
+above that, r4 comes from r30+4
+r30 is 44(r29)
+
+a08 -
+a58 800142b4
+
+r29:
+80ED6800.  Entity, type 0xE.  This one has no render function, but it's 1st (only its 1st) next pointer DOES have a render function, but has NO DATA POINTER.
+Data is only 0xC0 long.
+
+80ED1080
+
+Pointers to this structure:
+804D63E0
+and, heap
+
+pointers to "next" 0xE:
+803F9E14
+render: 80391070
+
+render function serves no obvious purpose.
+a78 80021cc4
+ac8 80021b28
+af8 ehundred
+
+the rrggbbaa value isn't read when the stage isn't faded.
+80014068 reads it. [ 80014014 ] [ 80014258 ] [ 801C9698 ]
+analysis: 80014258 
+124(r31 = r4) holds some flags of note.  (a heap pointer to nothing I recognize)
+oookkk... when shading is in effect, lbz 124(r31) is "0x1c" instead of 0x0C
+r4 (hence r31) to that function is entity03->subdata + 64
+jeebus.
+
+
+
+----------
+fix time stock
+
+branch from 802FFFF8 to 802FFF9C = FFFFA4
+POKE 802FFFF8 4BFFFFA4

@@ -1,0 +1,977 @@
+**********************************************
+***    wParam's SSBM reference             ***
+***                                        *********************************
+***  Not guaranteed to contain anything useful, or even to make sense    ***
+***  at all.  Read or use this file at your own risk.  If you can do     ***
+***  something cool based on this information, great, go for it, just    ***
+***  give me a little credit.  The idea behind this file is that it      ***
+***  will contain the things I discover in a format that is somewhat     ***
+***  clearer than the scratchpad.  Unfortunately, not everything that    ***
+***  gets into the scratchpad makes it into this file.                   ***
+***                                                                      ***
+****************************************************************************
+
+
+
+
+********************************************************
+		Variable/table addresses
+********************************************************
+803C2800   Move table
+803C12E0   Extended move table table (indexes 0x155 and up)
+		(Indexed by "internal" player index)
+803D0B00   Mewtwo's table
+803CCCB8   Peach's table
+803C7120   Mario's table
+
+803F0E0A   Character Selections (16-bit) (0x24 apart)
+804D6CAD   Stage Selection (16-bit)
+804D6730   KO star count (8-bit per player, p1p2p3p4)
+804530C9   Vs. Melee Flag (8-bit, 01=In Match, 00=Not Vs. Match)
+804807C8   Team Mode flag (8-bit, 01=ON, 00=OFF)
+
+80479D30   "Heart" of smash brothers
+
+804D5F90   Random Seed
+
+804D4A08   DbLevel
+804D6D58   HUD toggle (00=ON,01=OFF)
+8049FAB0   Develop item type
+8049FAB4   Develop pokemon type
+
+8045BF28   Current unlocked chars/start of memcard data
+8045B240	(for 1.1)
+80459F58	(for 1.0)
+8044CD28	(for PAL)
+8046B0EC   End of memcard data (61892/F1C4 total)
+8045D850   Vulnerable name on memory card
+
+80453080   Player blocks.  (0xE90 in length)
+
+8046B488   "Multi-man-craziness"_t
+8046B6A0   Match info (+0x28 = seconds left)
+
+804C1FAC   Button values, length 68/0x44.  (+8=instant, +0=constant)
+					   (byte0x1A=cX, byte0x1B=cY)
+
+803F14C4   Item action function table (itemaction_t 0x3C each)
+
+8046DB68   Looks like a copy of the StartMelee block
+8046DB80   Facts about current match.  (+0x8 -> item switch values.)
+
+80452C68   camera_t
+
+804D36A0 - 804E36A0   r13 space
+
+Button to move link functions:
+-----------------------------------------
+803C10D0	called on start/stop [jigglypuff & kirby only]
+803C1154	called on start/stop match
+803C11D8	called on start/stop match
+803C125C	[only jigglypuff has this one]
+803C12E0	move_t table addresses
+803C1364	
+803C13E8	side+b (ground)
+803C146C	up+b (air)
+803C1574	side+b (air)
+803C15F8	b button (air)
+803C167C	b button (ground)
+803C1700	down+b (ground)
+803C1784	up+b (ground)
+803C1808	empty, except ness, gamewatch
+803C188C	"Get Item"
+803C1910	
+
+
+********************************************************
+		Function addresses
+********************************************************
+
+8000522C   Entry point of ssbm.dol
+
+80003220   memcpy (void *dest, void *src, int len)
+800031F4   memmove (void *dest, void *src, int len)
+80003130   memset (void *addy, int value, int len)
+803238C8   memcmp (void *one, void *two, int len)
+80301E58   strcpy (needs verified)
+
+8037F1E4   void *malloc(int size); [note: blocks allocated are cached elsewhere,
+		so this func isn't the one called for ALL allocations, but it
+		is still helpful enough to be listed here.]
+
+80388220   assert() (or, rather, the function that's called when an
+		assert fails)
+803456a8   printf(), of some kind.
+
+80380580   random()
+
+800693AC   CharStateChange (running char block, state, flags, flags)
+
+8016E730   StartMelee (meleeblock_t)
+802FFF2C   CopyDebugToMeleeType (meleeblock_t *out)
+
+8016AE80   GetItemFrequency ()
+802255A4   Returns first frame button preses (int charindex) (develop only)
+8022558C   Returns button presses (develop only)
+80225754   HandleDevelopKeys()
+80034110   player_t *PlayerFromIndex (int index)
+8006CC7C   void DamagePlayer (r3=*SUB*player_t, f1=damage amount)
+
+Heart related:
+801A42F8   Write r3 to new major function (and go?)
+801A428C   Write r3 to new major function
+801A42A0   Write r3 to new minor function
+801A4B60   Write 1 to "go"
+801A42D4   Write 1 to "heart" + 12
+801A43A0   Run Major state (takes state index; doesn't return until done)
+		Does, however, mess up state, so don't call directly.
+
+Move related:
+8008DCE0   Generic take damage (move mods at 8008E258)
+80094A14   Called when you pick up an item
+8009447C   ApplyInstantItem (player_t, item_t)
+800D1FFC   Small mushroom on ground
+800D21BC   Small mushroom in air
+800D170C   Big mushroom on ground
+800D18CC   Big mushroom in air
+80090B60   DoFreezie (not sure how long it's applied for)
+8027AB64   SpawnPokemon (unsure)
+8007FA58   GiveBunnyHood (player, item[?])
+8007F8E8   RemoveBunnyHood (player)  (?)
+800C88D4   ApplyCloaking (player, duration, bool something)
+800C8A64   RemoveCloaking (player)  (?)
+800871A8   ApplyMetalItem (player, item) [need to use this, not ApplyMetal]
+800C8348   ApplyMetal (player, duration, something (0x32)) [incomplete]
+800C8540   RemoveMetal (player)
+8007B7FC   ApplyStarman (player, duration)
+800C0200   RemoveStarman (player, something) (probably)
+80390CFC   RunObjectFrameFuncs () (one blrl for each item, player, etc.)
+8006A360   RunPlayerObject (player_t *)
+802C5000   SpawnProjectile (?)
+800DEBD0   DoPlayerTaunt()
+800693AC   SetPlayerState(player_t *, int newstate, int ?, int ?)
+8026B3C0   CountItemsOfType (int type)
+
+8026C75C   int ChooseRandomItem (void *someparam);
+80268B18   entity_t *SpawnEntity (spawnitem_t *, int one);
+8026A8EC   DestroyItem (item_t)
+800948A8   GiveItemToPlayer (player_t, item_t) [check for existing item before
+		calling.  This will put instant items like metal boxes in their
+		hand instead of activating it.  Call this followed immediately
+		by ApplyInstantItem to activate it.]
+80086724   RemoveItemFromPlayer (player_t, item_t)
+800942A0   CheckForItems (player_t) [Seems to walk the item list looking for
+		items within range of a player.  Called when you press A on the
+		ground or Z in the air.  Returns NULL if no item found]
+8026AD20   ThrowItem (item_t *, vec3_t *pos, vec3_t *vel, int =1, float f1=1.0)
+800027E4   UnhookedThrowItem
+80225d1c   Returns the develop mode pokemon type
+8027a4d4   ChooseRandomPokemon() (returns internal pokemon type)
+800860C4   CountPlayers() (walks the player entity list, returns count)
+8046AF00   ssbm+: SlotToButtons (r3=slot from subplayer+C, returns pointer in 804C1FAC or 0)
+8046AEC0   ssbm+: fcfi, r3=int, returns (double)r3 in f8
+
+80041EE4   InitPhys (phys_t)
+80043754   RunPhys (func *, phys_t *, int flags)
+
+80031AD0   SetupPlayerSlot (int slot);  [Called on melee start, it calls 
+		AllocateAndInitPlayer for each running player.  It calls
+		AAIP again to allocate nana, if appropriate.]
+
+80068E98   AllocateAndInitPlayer (spawnplayer_t *)
+
+8006CA5C   PlayerThink(player_t *) (once per player per frame)
+8006A360   PlayerAlsoThink(player_t *)
+
+8001BE30   SaveGameData ()
+		r3  : 00000000  
+		r4  : 803BAC5C  "SuperSmashBros01..."
+		r5  : 803BAB74  directs the thing on what to save.
+		r6  : 80433334  [the strings that go in the file] appears to be all
+		r7  : 80BE7CE0  points to the picture data
+		r8  : 80BEACE0  i believe this is the icon
+		r9  : 8043331C  points to just before strings in r6
+		r10 : 8001CC30  if (r3==0)return; *(80433318+8) = 2; (OnComplete() function)
+		r11 : 00000000 
+
+8001A4CC   Related to finding files on memcard (char *filename, int zero)
+8001BD34   Load from memcard (int unknown, char *name, void *sameasr5fromsave)
+8001BE28   mtlr from Load (executed AFTER data is loaded)
+8001CBBC   DoLoadData (no params, handles all of the loading tasks)
+
+800D40B8   DoAirDeath (player_t *)
+800D4780   DoHitScreenDeath (player_t *)
+800D3BC8   DoGroundDeath (player_t *)
+
+********************************************************
+		Value tables
+********************************************************
+
+Characters:  (select/internal/name)
+----------------------------------
+00 02 falcon
+01 03 donkey
+02 01 fox
+03 18 game&watch
+04 04 kirby
+05 05 koopa
+06 06 link
+07 11 luigi
+08 00 mario
+09 12 marth
+0A 10 mewtwo
+0B 08 ness
+0C 09 peach
+0D 0C pikachu
+0E 0A/0B ice climbers
+0F 0F jigglypuff
+10 0D samus
+11 0E yoshi
+12 13 zelda
+13 07 shiek
+14 16 falco
+15 14 clink
+16 15 drmario
+17 1A roy
+18 17 pichu
+19 19 gannon
+1A 1B masterh
+1B 1D boy
+1C 1E girl
+1D 1F giga bowser
+1E 1C crazy hand
+1F 20 sandbag
+20 0A popo (ice climbers)
+-- 21 ?
+-- 25 ? (these two seem to have values)
+
+Player flags
+------------
+0x01	stamina mode
+0x02	no talking
+0x04	low gravity
+0x08	invisible
+0x10	black stock icon
+0x20	metal
+0x40	start the match on floating platform
+0x80	controller rumble enabled
+
+
+Stage flags
+-----------
+0x20	No character interaction (pokemon battle)
+	Also means no get-on-touch items
+
+
+Pokemon (decimal) (external, from the debug menu)
+Internally, the item type is (external - 1) + 0xA1
+--------
+00	random
+01	goldeen
+02	green blade thing ("chiku")
+03	snorlax
+04	blastoise
+05	wheezing
+06	charizard
+07	fire bird
+08	thunder bird
+09	ice bird
+10	wabbafet
+11	ceasar
+12	beedril wannabe
+13	fire dog
+14	thunder dog
+15	ice dog
+16	bellosom
+17	voltorb
+18	lugia
+19	houou
+20	ditto
+21	clefairy
+22	togepi
+23	mew
+24	celebi
+25	starman
+26	chansey
+27	porygon
+28	irritating fire thing
+29	maril
+30	venusaur
+
+
+
+Items (decimal/hex/name)
+-------------------------------
+## 0x   Item
+------------------
+00 00	capsule
+01 01	box
+02 02	barrel
+03 03	egg
+04 04	partyball
+05 05	cannon
+06 06	bombomb
+07 07	mr. saturn
+08 08	heart
+09 09	tomato
+10 0A	star
+11 0B	bat
+12 0C	sword
+13 0D	umbrella
+14 0E	green shell
+15 0F	red shell
+16 10	gun
+17 11	freezie
+18 12	food
+19 13	mine
+20 14	bumper
+21 15	super scope
+22 16	star rod
+23 17	lip stick
+24 18	fan
+25 19	fire flower
+26 1A	big mushroom
+27 1B	small mushroom
+28 1C	hammer
+29 1D	warp star
+30 1E	screw attack
+31 1F	rabbit hood
+32 20	metal
+33 21	cloak
+34 22	pokeball
+43 2B	goomba
+44 2C	redead
+45 2D	octarok
+46 2E	otosea
+
+D-pad moves
+-----------
+1: Nothing
+2: call 0x80001b10
+3: ToggleComputer
+4: Become visible
+5: Become invisible
+8: Get big mushroom in hand
+9: Get mini mushroom in hand
+18:POW block effect
+35:Clear all status effects
+36:ToggleComputer0
+37:ToggleComputer1
+38:ToggleComputer2
+39:ToggleComputer3
+40:Hammerhead
+
+Item bits to item switch entries
+--------------------------------
+Item 0x04
+0x08=POW box
+0x04=Poke Ball
+0x02=Invisibility
+0x01=Metal Box
+
+Item 0x03
+0x80=Bunny Hood
+0x40=Screw Attack
+0x20=Warp Star
+0x10=Hammer
+0x08=Poison Mushroom
+0x04=Super Mushroom
+0x02=Fire Flower
+0x01=Fan
+
+Item 0x02
+0x80=Lipstick
+0x40=Star Rod
+0x20=Super Scope
+0x10=Flipper
+0x08=Motion-Sensor Bomb
+0x04=Food
+0x02=Freezie
+0x01=Ray Gun
+
+Item 0x01
+0x80=Red Shell
+0x40=Green Shell
+0x20=Parasol
+0x10=Beam Sword
+0x80=Home-Run Bat
+0x04=Starman
+0x02=Maxim Tomato
+0x01=Heart Container
+
+Item 0x00
+0x80=Mr. Saturn
+0x40=Bob-omb
+0x20=Barrel Cannon
+0x10=Party Ball
+0x08=Probably nothing, on by default
+0x04=Barrel
+0x02=Crate
+0x01=Capsule
+
+
+Stage configuration word
+------------------------
+SC word 1:
+#  0x01: Big mushrooms are deadly
+#  0x02: Small mushrooms are deadly
+#  0x04: Any damage is deadly
+#  0x08: Players are invisible
+#  0x10: Items are invisible
+#  0x20: D-pad moves cost coins instead of health.
+#  0x40: Items never disappear
+#  0x80: Fixed camera
+SC word 2:
+#  0x01: Stage locked (no changing by graphical menu)
+#  0x02: Top/bottom of dummy wraps around
+#  0x04: Sides of dummy wrap around
+#  0x08: Infinite 3rd jumps
+#  0x10: Players stuck to the floor
+#  0x20: Item steal enabled
+#  0x40: Hot saturn potato enabled
+#  0x80: Fancy throwing enabled
+
+
+Common state values
+-------------------
+3C = forward smash
+40 = down smash?
+9C = screw attack, but no altitude
+57 = blowed up? no, but highly amusing
+50 = lip stick?
+e9 = dodge towards
+ea = dodge away
+ec = mid air dodge, if they're pressing a direction.
+108 = taunt
+13A = get big mush on the ground
+
+
+********************************************************
+		Struct types
+********************************************************
+
+
+  Debug menu
+----------------------------------------------------
+#define MENUTYPE_LABEL 		0
+#define MENUTYPE_CALLFUNC 	1
+#define MENUTYPE_ENUM 		2
+#define MENUTYPE_INT 		3
+#define MENUTYPE_INT_UNBOUNDED	4 //I've never seen this used
+#define MENUTYPE_HEX8BIT	5
+#define MENUTYPE_HEX16BIT	6
+#define MENUTYPE_HEX32BIT	7
+#define MENUTYPE_FLOAT		8
+#define MENUTYPE_END_MENU	9
+
+debug menu struct:
+{
+	int type;
+	void *func; //seems to take only 1 parameter
+	char *text;
+	char **enumtexts;
+	void *data; //pointer to where data goes
+	float mindata; //inclusive
+	float maxdata; //inclusive
+	float delta;
+}
+for the function, r3=0 means menu changed, r3=4 means menu displayed
+type - One of the MENUTYPE_ values defined above
+func - A pointer to some code.  Value of r3 determines what action
+	to take.  (Detailed research into this has not been written)
+enumtexts - Pointer to a list of pointers to text.  This is how enum
+	values are displayed; as far as I know this parameter is ignored
+	for all other types.  No bounds checking is performed, and no
+	terminating NULL is needed.  There must be enough pointers to
+	satisfy the range specified by the mindata and maxdata elements
+	or the game will crash when it tries to display an invalid entry.
+	Quick example.  Let's say you have the text "One" at 0x80001234,
+	"Two" at 0x8000133C, and "Four" at 0x803CFF84.  To use these in
+	an enum, you would need to store the byte pattern:
+	80 00 12 34 80 00 13 3C 80 3C FF 84
+	in memory and store the address of the first byte in enumtexts.
+data - Pointer to data to be modified; interpretation depends on the 
+	type
+mindata - Minimum data value, inclusive.  Not used by HEX types.
+	(Hex types always let you go from 0x00 to 0xFF)
+maxdata - Maximum data value, inclusive.  Not used by HEX types.
+delta - How much the data changes at each step.  Used by int, float, 
+	and the hex types.
+
+The function takes one paramater, a small int.
+r3 = 0 -> Menu item is being hidden.
+r3 = 1 -> User pressed A on menu.
+r3 = 2 -> Value decremented
+r3 = 3 -> Value incremented
+r3 = 4 -> User pressed B on menu.
+It seems returning 0 is the norm.
+
+
+  Move tables
+-------------------------------------------
+move_t
+{
+	int subaction ID
+	int flags 1
+	int flags 2
+	void *animation interrupt (Function that defines state entered after this)
+	void *input interrupt (State's IASA function)
+	void *action physics (Physics behaviour per frame)
+	void *collision interrupt (State entered when platform collision changes)
+	void *camera behaviour  (Camera behaviour four a given state)
+};
+
+The index is the most interesting.  At first I thought it was just
+some sort of animation index, because it sort of corresponds to the
+index of the move_t in the table, but not really.  No, though, it
+actually controls quite a bit more than that.  You can change just
+the index for something and get a completely different move.  Current
+best theory is that the index goes into yet another table somewhere
+that controls move, and the functions are only concerned with graphical
+effects.
+
+Note:  the index does not link to the "button to move link function
+tables".  Mewtwo's down+b and side+b don't match up.
+
+Argh, index, why do you toy with me so?  80085cd8 receives the player
+and the index.  If I force the index to always be the same, then
+THE ANIMATIONS ARE ALWAYS THE SAME.  In general, moves still work the same
+way, but not always.  (There's a timing constraint related to the animation.)
+
+More update.  I tried replacing all 7 things EXCEPT the index.  The move
+STILL won't work.  It took away the rapid fire a button attack.  If I set
+the index, the move started /looking/ right, but was still not working.
+
+Current best theory: Actual work for b button moves is in button move
+link functions.  I am seriously starting to thing that the entire move_t
+is nothing but graphical.
+
+No, no, those functions DO AFFECT GAMEPLAY.  I'm wondering if CharStateChange
+should be renamed to "RunMove".  Noping out the call to charstatechange in the
+button move link function for side+b results in _NO MOVE BEING PERFORMED_.
+
+Each of those functions is called every frame.  Somewhere inside, useful
+stuff happens.  Dandy-tastic.
+
+Here's a mind bender.  Replacing EVERY ONE OF MARIO'S SIDE B VALUES
+with an empty function does NOTHING to affect the move.  It only affects
+whether mario comes to a full stop before waving the cape.
+
+
+
+The player type.
+----------------------------------------------
+
+These all refer to the "sub player", the one you get by
+loading a pointer value 44 bytes ahead of the root "player"
+struct.  (I think this root struct is actually a generic entity
+for the game)
+
+subplayer_t (size roughly 0x2400 bytes, believed 0x23EC)
+{
+	0x0000  Pointer back to entity_t
+	0x0004  Player index (internal player type)
+	0x0008  Player number (1-based, incremented for each struct.)
+		No, it is the number spawn this is.  Valid as an index only until
+		someone dies.
+	0x000C  Player slot (only 1 byte long, other 3 probably padding garbage)
+	0x0010  Player state
+	0x0014  Player animation
+	0x0018  = 0x155 (I think this is the move table divider number)
+	0x0020  Player dependent move table pointer
+	0x0024	Also related to moves ("move swap code value")
+	0x0034  Player scale.  (read on map start)
+	0x0038  Player scale.  (set according to 0x34, seems to affect physics)
+	0x003C  Player Z scale factor (makes you really wide) (?)
+	0x0040  Some sort of vertical model offset
+	0x0080	X velocity
+	0x0084	Y velocity
+	0x0088	Z velocity
+	0x00B0	X coord
+	0x00B4	Y coord
+	0x00B8	Z coord (?)
+	0x00BC	X coord, again (prev. frame)
+	0x00C0	Y coord, again
+	0x00C4	Z coord, again
+	0x00C8  X delta (last frame to this frame)
+	0x00CC	Y delta (last frame to this frame)
+	0x00D0	Z delta (last frame to this frame)
+	0x00E0	bool inair;
+	0x00EC	X velocity? (code sets both vel. at same time.)
+	0x0168	Stores an int that's copied to the jump counter by 8007D698
+		It stores the number of jumps you get, not including up+b.  2 for
+		most people, 6 for kirby, etc.  Increasing it doesn't work
+		quite right.
+	0x0490  Color blend pointer (same stuff as from item_t)
+	0x04B4  rrggbbaa color applied.  Changing changes color.
+	0x04B8	float red (used by 0x490 stuff)
+	0x04BC	float green (used by 0x490 stuff)
+	0x04C0	float blue (used by 0x490 stuff)
+	0x04C4	float alpha (used by 0x490 stuff)
+	0x0504  Random flag values: 0x80 == use color
+	0x0638	C-stick X axis (float; -1.0-1.0)
+	0x063C	C-stick Y axis (float; -1.0-1.0)
+	0x065C	Buttons pressed (in this frame)
+	0x0660	Buttons pressed (== the +0x65C from last frame)
+	0x0668	Instant buttons
+	0x06F0  phys_t
+	0x06F4	X, Y, Z
+	0x0700	X, Y, Z
+	0x070C	X, Y, Z
+	0x0718	X, Y, Z
+	0x0738  noclip if =0, clip else
+	0x1830	float: current damage.
+	0x1838	float used in damage calcs ("damageapplied")
+	0x183C	(this+0x1838) cast to integer
+	0x1840	zero
+	0x1844	Start of some damage application type (0x2C long  (0x28?))
+	0x1844	float: damage direction (1 or -1)
+	0x1848	int: 0x169 (I think this is a player state value
+	0x184C	int: 1
+	0x1850	float used in damage calcs ("forceapplied")
+	0x1854	three floats, coordinates perhaps?
+		looks like coords of where the damage took place
+	0x1860	int: depends on state in 0x1848
+	0x1864	int: depends on state in 0x1848
+	0x1868	damage source (entity_t)
+	0x186C	float: last applied damage.
+	0x18C4	slot of person who last damaged you (0-5.  6 means self destruct)
+	0x1968	byte: Jump number (0, 1, or 2)
+	0x1974  Item held
+	0x1978  Item related, true purpose unsure
+	0x197C  Bunny hood worn, if any
+	0x1A4C	float, sleep time remaining (frames?)
+	0x1A58	Player held
+	0x1A5C	Also player held
+	0x2000  Frames of lipstick flower remaining
+	0x2004	Frames of starman remaining
+	0x2008	Frames of mushroom remaining (both big & small)
+	0x2014	Frames of bunny hood remaining
+	0x2028	Frames of metal box remaining
+	0x2030	Frames of cloaking device remaining
+	0x2330  Frames of hammer remaining
+};
+
+
+
+Item specific entity data
+-------------------------
+
+sub_item_t (size: 0x1000)
+{
+	0x04:	pointer back to entity_t
+	0x10:	Item type
+	0x1C:	#items spawned so far (maybe of just this type?)
+	0x20:	(not written to)
+	0x24:	state (indexes into the (this+0xBC) pointer)
+	0x40:	X velocity
+	0x44:	Y velocity
+	0x48:	Z velocity (assumed)
+	0x4C:	X coord(?)
+	0x50:	Y coord
+	0x54:	Z coord(?)
+	0xB8:	Pointer to static data about item. (many function pointers, 0x3C in length)
+	0xBC:	More static data.  (This value is also first in *(this+0xb8))
+	0xC4:	links to something that links to something that holds length of metal box.
+	0x378:	phys_t (4 sets of XYZ, just like in sub_player_t)
+	0x4C4:  odd blocks of (-1int, 0, 0, 1float, 0) repeated 5 times
+	0x518:	player_t* owner.  (Stays set after item is thrown; score probably uses.)
+	0x548	start of color_t
+	0x548:	Frames of current color left
+	0x550:	Pointer to color table
+	0x570:	Unknown, possibly index into color table
+	0x574:	rrggbbaa, set by the game based on next 4 floats
+	0x578:	float red (0-255)
+	0x57C:	float green (0-255)
+	0x580:	float blue (0-255)
+	0x584:	float alpha (0-255) (255 = item is 100% that color, 0 = no color change)
+	0x588:	red 'velocity'?
+	0x58C:	green 'velocity'?
+	0x590:	blue 'velocity'?
+	0x594:	alpha 'velocity'?
+	0x5C4:	color enable (set to 0x80000000 to apply color)
+	0x640:	sub_player_t of person who was hit? (not set to NULL when spawned)
+	0xCF4:	player_t of person who was hit? (valid only in the OnHitPlayer())
+	0xD14:	func pointer (these come from the 0xBC pointer)
+	0xD18:	func pointer
+	0xD1C:	func pointer
+	0xD44:	float timetillexpire
+	0xDDC:	!= 0 -> harmless bomb?.  no.
+	0xE00:	player_t: owner
+};
+
+Item states:
+0:	on ground
+2:	held
+3:	airborne
+
+
+item_func_data_t
+{
+	void *statedata;
+	func* 8027d76c	OnCreate(item_t *)
+	func* NULL	OnDestroy (item_t *)
+	func* 8027e0b4  OnPickup (item_t *) (player_t at 0x518 is valid)
+10	func* 8027e648	?
+	func* 80280380	OnThrow (item_t *)
+	func* 80280df0	OnHitPlayer (item_t *) (player_t* target is at subitem+0xCF4)
+			if this function returns 1, the item is 'instant on touch'
+	func* 80280e30	OnTakeDamage (item_t *)
+20	func* 80280e9c	?
+	func* 802810a4	?
+	func* 80281070	?
+	func* null	?
+30	func* 80281104	?
+	func* 802810c4	?
+	func* 80281144	?
+};
+
+A note about state data:
+State data looks like this:
+itemrunstate_t
+{
+	int someflags;
+	void *func1;
+	void *func2;
+	void *func3;
+};
+As far as I know every function runs every frame.  func1 is supposed to
+return a value, func2 is not, func3 unknown.  They can be NULL.
+The number of state table entries an item uses can't be determined by any static
+data that I can see, you just have to watch the item's state value and see what
+it gets to.
+
+
+
+The heap.
+----------------------------------------------
+heap_t //8 words total.
+{
+	heap_t *next;
+	heap_t *prev;
+	int size; //includes sizeof (heap_t)
+	int unknown[5];
+}
+
+I think all allocations on the heap are rounded up to 0x20 bytes (8 words), but
+only the fields that are used get written.  The 5 unknown words in here often
+contain random seming data, and I don't think it's ever used for anything.  Malloc
+returns a pointer to the word AFTER this struct (i.e. the start of the actual
+block of memory this struct describes).  The size includes the full size (including
+padding) of this struct, and the block that follows it.  So you shouldn't ever see
+a size of less than 0x40.
+
+
+Game entities.
+-----------------------------------------------
+
+entity_t //64 bytes
+{
+	short class;
+	byte unknown1;
+	byte unknown2;
+	short zero;
+	byte three;
+	byte class; //?
+	entity_t *next;
+	entity_t *prev;
+	entity_t *next; //these pairs are always the same.
+	entity_t *prev; //they seem to only link objects of the same type
+	void *unknown; (linked list of something)
+	void (*framefunc)(entity_t *self, int code); //called each frame
+			may actually be the "render" function
+	int null1;
+	int null2;
+	void *unknownnon_heap;
+	void *entity_data;
+	void (*data_destructor)(void *ed);	
+};
+
+Entity classes:
+0x1: stage?
+0x6: player
+0x4: item
+0x8: ? x2
+0xC: ?
+0xD: random effects
+0x10: (we suspect this is 'camera')
+0xE: ?
+
+This is the generic "entity" structure.  Everything in the game (even the stage,
+I think) is an entity.  This is the structure that "contains" a subplayer_t struct.
+(The subplayer_t is the entity_data, at +44 bytes).  They only link to within the
+same class.  player_t and item_t would both be pointers to this type of struct
+(though obviously an item_t has a subitem_t as its entity data instead of a
+subplayer_t)
+
+
+Struct for SpawnEntity
+---------------------------------------------
+
+spawn_item_t (not bigger than 0x58 bytes)
+{
+	0x00: pointer to player (if applicable)
+	0x04: same as 0x00 (?)
+	0x08: item type index
+	0x0C: i THINK it's a sub type (what kind of food, etc.)
+	0x10: odd pointer (80cbf0c0) (depends on how melee started)
+		(set to 0 by SpawnEntity; is never read).  May be
+		leftover garbage from the stack)
+	0x14: X coord (float)
+	0x18: Y coord (float)
+	0x1C: z coord (float)
+	0x20: X coord again (float)(derp?)
+	0x24: Y again (float)
+	0x28: z again (float)
+	0x2C: X velocity (float)
+	0x30: Y velocity (float)
+	0x34: Z velocity (float)
+	0x38: 1 or -1 (angular velocity) (float)
+	0x44: 0x80000000
+	0x48: set to 1 by SpawnItem
+};
+
+
+I call SpawnEntity with only the item type index, the angular velocity, and the
+flags at 0x44 set; the rest are all zero.  AV and the flag might also be optional.
+
+
+Block for the spawn player function
+-----------------------------------
+spawn_player_block_t (possible length 0xC)
+{
+	int internal_index; //internal player type code
+	byte slot; //which player slot to associate with
+	byte something2; //usually 0xFF
+	byte flags;
+};
+flags: 
+0x2A = normal person
+0x80 = nana
+0x00 = exact copy of player
+0x29 = player spawned for multi-match fight
+
+
+
+
+Static player block
+-------------------
+
+They start at 80453080
+static_player_block_t //0xE90 bytes long
+{
+	0x04: long, player type (external index)
+	0x08: long, slot type (human, cpu, demo, none)
+	0x10: float, X coordinate (horizontal)
+	0x14: float, Y coordinate (vertical)
+	0x18: float, Z coordinate?  (depth)
+	0x44: byte, bool computer?
+	0x45: byte, controller index
+	0x60: short, currently /displayed/ health. (ALWAYS counts up)
+	0x62: short, health start value.
+	0x8E: short, stock count
+	0x90: int, current coins
+	0x94: int, total collected.
+	0xAC: byte, flag 0x40 means "eligible for multi spawn"
+	0xB0: void*, pointer to player_t
+	0xB4: void*, pointer to player_t for nana, if applicable
+}
+
+
+
+Map ground struct
+-----------------
+
+Pointers to these start at 803DFEDC
+
+map_thing_block_t (0x34 bytes)
+{
+	0x00: long: "grkind"
+	0x04: void*: unknown data pointer
+	0x08: char*: map filename
+	0x0C: void*: unknown code pointer (called on start and on EVERY stage end)
+	0x10: void*: unknown code pointer
+	0x14: void*: unknown code pointer (called on this stage start)
+	0x18: ""
+	0x1C: ""
+	0x20: ""
+	0x24: ""
+	0x28: int: unknown non-zero small int
+	0x2C: int: unknown data pointer
+	0x30: int: small integer
+}
+
+
+
+Item "action" struct
+--------------------
+item_func_data_t
+{
+	0x00	void *framestate;
+	0x04	OnCreate(item_t *)
+	0x08	OnDestroy (item_t *)
+	0x0C	OnPickup (item_t *) (player_t at 0x518 is valid)
+	0x10	func* 	?
+	0x14	OnThrow (item_t *)
+	0x18	OnHitPlayer (item_t *) (player_t* target is at subitem+0xCF4)
+			if this function returns 1, the item is 'instant on touch'
+	0x1C	OnTakeDamage (item_t *)
+	0x20	OnFallOffEdge (item_t *, item->subitem->0xB8)
+	0x24	func*	?
+	0x28	func*	?
+	0x2C	func*	?
+	0x30	func*	?
+	0x34	func*	?
+	0x38	func*	?
+};
+
+The frame state thing is an index into an array of structs that look like this:
+otherdata_t
+{
+	int usuallynegative1
+	func*
+	func*
+	func*
+};
+There's nothing obvious that tells you how many are used by the item.  They may even duplicate.  Each of the three functions is called every frame when the item is in that state.
+
+
+
+Start Melee type
+----------------
+
+startmelee_t
+{
+	0x0E:	short, stage number
+	0x38:	Camera change function pointer.  (Fixed camera = 80165290)
+}
+
+
+Camera Type
+-----------
+camera_t (located at 80452C68)
+{
+	0x00:	entity_t *, pointer to camera entity
+	0x04:	int, camera type (index into 803BCB18)
+	0x0C:	float, related to view distance or something
+	0x10:	float, distance to background?
+	0x14:	float, pan angle (positive=pan right, negative = pan left, units unknown)
+	0x18:	float, tilt angle (positive=up, negative=down)
+	0x1C:	float, also tilt angle (seems to only tilt down, though)
+	0x2C:	float, some kind of pan around point angle
+	0x30:	float, tilt around point angle
+	0x34:	float, depth? (more positive=camera farther away)
+	0x44:	float, fov
+	0x84:	float xtranslate (positive=move right, negative=move left)
+	0x88:	float ytranslate (positive=move up, negative=move down)
+};
+
+Camera types:
+0: normal
+1: pause view (control stick moves view)
+2: one player view (char off center)
+3: same as 2 except centered
+4: fixed
+5: crazy
+6: (used in demo mode to focus on a player)
+8: the mode develop uses when you lock the camera
